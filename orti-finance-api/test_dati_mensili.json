@@ -1,0 +1,38 @@
+{
+  "compagnia": "ORTI",
+  "anno": 2025,
+  "mese": "Agosto",
+  "entrate": {
+    "Hotel": 85000,
+    "Residence": 42000,
+    "Supermercato": 15000,
+    "Caparre Intur": 5000,
+    "Totale": 147000
+  },
+  "uscite": {
+    "Salari e Stipendi": {
+      "Totale": 120000,
+      "Dettagli": {
+        "Salari Operativi": 80000,
+        "F24 Contributi": 40000
+      }
+    },
+    "Utenze": 38660,
+    "Materie Prime/Consumo": 151523.0,
+    "Tasse e Imposte": 0.0,
+    "Varie ed Eventuali": 20000,
+    "Totale": 330183
+  },
+  "cashflow": {
+    "Diff Entrate-Uscite": -183183,
+    "Saldo MPS": 572486.27,
+    "Saldo Intesa": 67840.88,
+    "Saldo Sella": 0,
+    "Cassa": 5000,
+    "Totale Banche": 640327.15,
+    "Affidamenti": {
+      "MPS 60m": 500000
+    },
+    "Cash Flow con Affidamenti": 957144.15
+  }
+} 
