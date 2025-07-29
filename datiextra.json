@@ -1,0 +1,503 @@
+{
+    "ricavi": {
+      "2024": {
+        "ANGELINARES": {
+          "Gennaio": 0.00,
+          "Febbraio": 0.00,
+          "Marzo": 4777.35,
+          "Aprile": 49889.60,
+          "Maggio": 88296.22,
+          "Giugno": 153629.42,
+          "Luglio": 257787.97,
+          "Agosto": 316657.47,
+          "Settembre": 134995.41,
+          "Ottobre": 55621.88,
+          "Novembre": 3208.45,
+          "Dicembre": 0.00,
+          "Totale": 1064863.77
+        },
+        "HOMEHOLIDAY": {
+          "Gennaio": 5689.14,
+          "Febbraio": 5174.80,
+          "Marzo": 8059.55,
+          "Aprile": 16739.05,
+          "Maggio": 23802.95,
+          "Giugno": 29011.50,
+          "Luglio": 39075.75,
+          "Agosto": 46507.57,
+          "Settembre": 21464.06,
+          "Ottobre": 13059.84,
+          "Novembre": 1994.14,
+          "Dicembre": 4088.14,
+          "Totale": 214666.47
+        },
+        "PANORAMAHT": {
+          "Gennaio": 636.68,
+          "Febbraio": 725.55,
+          "Marzo": 9513.27,
+          "Aprile": 125808.14,
+          "Maggio": 339132.07,
+          "Giugno": 469331.51,
+          "Luglio": 570079.85,
+          "Agosto": 627517.50,
+          "Settembre": 510343.17,
+          "Ottobre": 274976.83,
+          "Novembre": 30226.45,
+          "Dicembre": 3453.00,
+          "Totale": 2961744.00
+        }
+      },
+      "2025": {
+        "ANGELINARES": {
+          "Gennaio": 0.00,
+          "Febbraio": 0.00,
+          "Marzo": 0.00,
+          "Aprile": 22805.97,
+          "Maggio": 62069.81,
+          "Giugno": 101547.29,
+          "Luglio": 84910.99,
+          "Agosto": 100497.74,
+          "Settembre": 45130.01,
+          "Ottobre": 17649.63
+        },
+        "HOMEHOLIDAY": {
+          "Gennaio": 2242.00,
+          "Febbraio": 4483.16,
+          "Marzo": 4285.50,
+          "Aprile": 16648.57,
+          "Maggio": 22887.70,
+          "Giugno": 29586.40,
+          "Luglio": 44241.09,
+          "Agosto": 52564.33,
+          "Settembre": 24116.47,
+          "Ottobre": 15062.02
+        },
+        "PANORAMAHT": {
+          "Gennaio": 3750.00,
+          "Febbraio": 3750.00,
+          "Marzo": 4402.70,
+          "Aprile": 123494.51,
+          "Maggio": 451018.64,
+          "Giugno": 601974.63,
+          "Luglio": 647288.50,
+          "Agosto": 706308.65,
+          "Settembre": 580993.58,
+          "Ottobre": 314259.64
+        },
+        "SUPERMERCATO": {
+          "Luglio": 25620.00,
+          "Agosto": 25620.00,
+          "Settembre": 25620.00,
+          "Ottobre": 25620.00,
+          "Novembre": 25620.00,
+          "Dicembre": 25620.00
+        }
+      },
+      "2026": {
+        "SUPERMERCATO": {
+          "Gennaio": 25620.00,
+          "Febbraio": 25620.00,
+          "Marzo": 25620.00,
+          "Aprile": 25620.00
+        }
+      }
+    },
+    "uscite": {
+      "2025": {
+        "Gennaio": {
+          "Salari e Stipendi": {
+            "SALARI": 431052.00,
+            "F24": 208000.00,
+            "Totale": 639052.00
+          },
+          "Ristr. Apt SDP Jr": {
+            "S.T.E.": 16500.00,
+            "PITTORE": 8800.00,
+            "INFISSI ROMANO": 4400.00,
+            "SANTELIA IMPIANTI": 21466.50,
+            "NUSCO": 5086.40,
+            "ARCHITETTO": 12000.00,
+            "Totale": 68252.90
+          }
+        },
+        "Luglio": {
+          "Utenze": {
+            "Energia elettrica": 12200.00,
+            "Gas": 5710.00,
+            "Totale": 17910.00
+          },
+          "Materie Prime/Consumo": 66832.16,
+          "Commissioni Portali": {
+            "Commissioni Booking": 35940.58,
+            "Commissioni Expedia": 9411.00,
+            "Totale": 45351.58
+          },
+          "Consulenze": {
+            "Consulenza del lavoro": 5000.00,
+            "Consulenza fiscale": 5000.00,
+            "Totale": 10000.00
+          },
+          "Varie ed Eventuali": 20000.00
+        },
+        "Agosto": {
+          "Salari e Stipendi": {
+            "SALARI": 80000.00,
+            "F24": 40000.00,
+            "Totale": 120000.00
+          },
+          "Utenze": {
+            "Energia elettrica": 16700.00,
+            "Gas": 5750.00,
+            "Ausino": 10100.00,
+            "Vodafone": 2210.00,
+            "Connectivia": 3900.00,
+            "Totale": 38660.00
+          },
+          "Materie Prime/Consumo": 151523.00,
+          "Commissioni Portali": {
+            "Commissioni Booking": 51837.35,
+            "Commissioni Expedia": 8956.82,
+            "Totale": 60794.17
+          },
+          "Mutui e Finanziamenti": {
+            "Mutuo Intesa": 13156.50,
+            "Totale": 13156.50
+          },
+          "Canoni e servizi": {
+            "Hoxell": 2200.00,
+            "Altamira": 97.60,
+            "Amalfi Web": 4000.00,
+            "Commissioni Transato Pos": 13397.61,
+            "Noleggio Tesla": 924.50,
+            "Totale": 20619.71
+          },
+          "Godimento Beni di Terzi": {
+            "Fitto Ramo d'Azienda": 116000.00,
+            "Totale": 116000.00
+          },
+          "Varie ed Eventuali": 20000.00,
+          "Ristr. Apt SDP Jr": {
+            "MIELE RI.BA DAL 31/05/2025": 4000.00,
+            "Totale": 4000.00
+          }
+        },
+        "Settembre": {
+          "Salari e Stipendi": {
+            "SALARI": 88000.00,
+            "F24": 45000.00,
+            "Totale": 133000.00
+          },
+          "Utenze": {
+            "Energia elettrica": 26050.00,
+            "Gas": 5700.00,
+            "Ausino": 13750.00,
+            "Totale": 45500.00
+          },
+          "Materie Prime/Consumo": 184172.00,
+          "Commissioni Portali": {
+            "Commissioni Booking": 43419.62,
+            "Commissioni Expedia": 5955.00,
+            "Totale": 49374.62
+          },
+          "Tasse e Imposte": {
+            "IVA": 150000.00,
+            "IMPOSTA DI SOGGIORNO HP": 17676.00,
+            "IMPOSTA DI SOGGIORNO AR": 2146.45,
+            "IMPOSTA DI SOGGIORNO CVM": 1048.00,
+            "Totale": 170870.45
+          },
+          "Mutui e Finanziamenti": {
+            "Mutuo Intesa": 13156.50,
+            "Totale": 13156.50
+          },
+          "Canoni e servizi": {
+            "Sistemi (E_solver)": 1200.00,
+            "Altamira": 97.60,
+            "Commissioni Transato Pos": 18033.45,
+            "Commissioni e spese Bancarie": 2000.00,
+            "Noleggio Tesla": 924.50,
+            "Totale": 22255.55
+          },
+          "Godimento Beni di Terzi": {
+            "Fitto Ramo d'Azienda": 116000.00,
+            "Fitto CVM": 50000.00,
+            "Totale": 166000.00
+          },
+          "Varie ed Eventuali": 20000.00,
+          "Ristr. Apt SDP Jr": {
+            "MIELE RI.BA DAL 31/05/2025": 4000.00,
+            "ALESSIO": 47000.00,
+            "Totale": 51000.00
+          }
+        },
+        "Ottobre": {
+          "Salari e Stipendi": {
+            "SALARI": 80000.00,
+            "F24": 40000.00,
+            "Totale": 120000.00
+          },
+          "Utenze": {
+            "Energia elettrica": 28200.00,
+            "Gas": 6050.00,
+            "Vodafone": 3000.00,
+            "Connectivia": 3600.00,
+            "Totale": 40850.00
+          },
+          "Materie Prime/Consumo": 87369.00,
+          "Commissioni Portali": {
+            "Commissioni Booking": 34291.50,
+            "Commissioni Expedia": 7938.00,
+            "Totale": 42229.50
+          },
+          "Tasse e Imposte": {
+            "IMPOSTA DI SOGGIORNO HP": 17272.00,
+            "IMPOSTA DI SOGGIORNO AR": 2491.08,
+            "IMPOSTA DI SOGGIORNO CVM": 1604.00,
+            "Totale": 21367.08
+          },
+          "Mutui e Finanziamenti": {
+            "Mutuo Intesa": 13156.50,
+            "Totale": 13156.50
+          },
+          "Canoni e servizi": {
+            "Altamira": 97.60,
+            "Commissioni Transato Pos": 15731.32,
+            "Software tecnology": 300.00,
+            "Noleggio Tesla": 924.50,
+            "Totale": 17053.42
+          },
+          "Godimento Beni di Terzi": {
+            "Fitto AR": 120000.00,
+            "Totale": 120000.00
+          },
+          "Consulenze": {
+            "Consulenza fiscale": 5000.00,
+            "Totale": 5000.00
+          },
+          "Varie ed Eventuali": 20000.00
+        },
+        "Novembre": {
+          "Salari e Stipendi": {
+            "SALARI": 120000.00,
+            "F24": 51000.00,
+            "Totale": 171000.00
+          },
+          "Utenze": {
+            "Energia elettrica": 19800.00,
+            "Gas": 5800.00,
+            "Totale": 25600.00
+          },
+          "Materie Prime/Consumo": 72493.40,
+          "Commissioni Portali": {
+            "Commissioni Booking": 14048.63,
+            "Commissioni Expedia": 6525.27,
+            "Totale": 20573.90
+          },
+          "Tasse e Imposte": {
+            "IMPOSTE": 7500.00,
+            "IVA": 50000.00,
+            "IMPOSTA DI SOGGIORNO HP": 18020.00,
+            "IMPOSTA DI SOGGIORNO AR": 1447.86,
+            "IMPOSTA DI SOGGIORNO CVM": 812.00,
+            "Totale": 77779.86
+          },
+          "Mutui e Finanziamenti": {
+            "Mutuo MPS": 72800.00,
+            "Mutuo Intesa": 13156.50,
+            "Totale": 85956.50
+          },
+          "Canoni e servizi": {
+            "Proxima Service": 7502.64,
+            "Sistemi (E_solver)": 1200.00,
+            "Altamira": 97.60,
+            "Amalfi Web": 4000.00,
+            "Commissioni Transato Pos": 7362.04,
+            "Commissioni e spese Bancarie": 2000.00,
+            "Noleggio Tesla": 924.50,
+            "Totale": 23086.78
+          },
+          "Godimento Beni di Terzi": {
+            "Fitto CVM": 50000.00,
+            "Totale": 50000.00
+          },
+          "Consulenze": {
+            "Consulenza del lavoro": 5000.00,
+            "Totale": 5000.00
+          },
+          "Varie ed Eventuali": 20000.00
+        },
+        "Dicembre": {
+          "Salari e Stipendi": {
+            "SALARI": 41052.00,
+            "F24": 17000.00,
+            "Totale": 58052.00
+          },
+          "Utenze": {
+            "Energia elettrica": 13600.00,
+            "Gas": 6050.00,
+            "Ausino": 14501.00,
+            "Vodafone": 3000.00,
+            "Connectivia": 3400.00,
+            "Totale": 40551.00
+          },
+          "Materie Prime/Consumo": 60742.00,
+          "Commissioni Portali": {
+            "Commissioni Booking": 679.04,
+            "Commissioni Expedia": 105.62,
+            "Totale": 784.66
+          },
+          "Tasse e Imposte": {
+            "IMU": 5109.00,
+            "IMPOSTA DI SOGGIORNO HP": 12828.00,
+            "IMPOSTA DI SOGGIORNO AR": 857.91,
+            "IMPOSTA DI SOGGIORNO CVM": 748.00,
+            "IVA": 50000.00,
+            "IMPOSTE": 2390.00,
+            "Totale": 71933.91
+          },
+          "Mutui e Finanziamenti": {
+            "Mutuo Intesa": 13156.50,
+            "Totale": 13156.50
+          },
+          "Canoni e servizi": {
+            "Altamira": 97.60,
+            "Commissioni Transato Pos": 813.88,
+            "Software tecnology": 300.00,
+            "Noleggio Tesla": 924.50,
+            "Totale": 2135.98
+          },
+          "Consulenze": {
+            "Consulenza fiscale": 5000.00,
+            "Totale": 5000.00
+          },
+          "Varie ed Eventuali": 20000.00
+        }
+      },
+      "2026": {
+        "Gennaio": {
+          "Salari e Stipendi": {
+            "SALARI": 22000.00,
+            "F24": 15000.00,
+            "Totale": 37000.00
+          },
+          "Utenze": {
+            "Energia elettrica": 4520.00,
+            "Gas": 3200.00,
+            "Ausino": 8224.00,
+            "Totale": 15944.00
+          },
+          "Materie Prime/Consumo": 23748.00,
+          "Tasse e Imposte": {
+            "IMPOSTA DI SOGGIORNO HP": 572.00,
+            "IMPOSTA DI SOGGIORNO AR": 65.99,
+            "IMPOSTA DI SOGGIORNO CVM": 150.00,
+            "IVA": 5109.00,
+            "Totale": 5896.99
+          },
+          "Mutui e Finanziamenti": {
+            "Mutuo Intesa": 13156.50,
+            "Totale": 13156.50
+          },
+          "Canoni e servizi": {
+            "Altamira": 97.60,
+            "Software tecnology": 300.00,
+            "Noleggio Tesla": 924.50,
+            "Totale": 1322.10
+          },
+          "Varie ed Eventuali": 20000.00
+        },
+        "Febbraio": {
+          "Utenze": {
+            "Energia elettrica": 3010.00,
+            "Gas": 3000.00,
+            "Ausino": 8224.00,
+            "Totale": 14234.00
+          },
+          "Materie Prime/Consumo": 12355.40,
+          "Tasse e Imposte": {
+            "IMPOSTA DI SOGGIORNO CVM": 146.00,
+            "Totale": 146.00
+          },
+          "Mutui e Finanziamenti": {
+            "Mutuo Intesa": 13156.50,
+            "Totale": 13156.50
+          },
+          "Canoni e servizi": {
+            "Altamira": 97.60,
+            "Noleggio Tesla": 924.50,
+            "Totale": 1022.10
+          },
+          "Varie ed Eventuali": 20000.00
+        },
+        "Marzo": {
+          "Tasse e Imposte": {
+            "IVA": 10000.00,
+            "Totale": 10000.00
+          },
+          "Mutui e Finanziamenti": {
+            "Mutuo Intesa": 13156.50,
+            "Totale": 13156.50
+          },
+          "Canoni e servizi": {
+            "Altamira": 97.60,
+            "Noleggio Tesla": 924.50,
+            "Totale": 1022.10
+          },
+          "Varie ed Eventuali": 20000.00
+        },
+        "Aprile": {
+          "Mutui e Finanziamenti": {
+            "Mutuo Intesa": 13156.50,
+            "Totale": 13156.50
+          },
+          "Canoni e servizi": {
+            "Altamira": 97.60,
+            "Noleggio Tesla": 924.50,
+            "Totale": 1022.10
+          },
+          "Varie ed Eventuali": 20000.00
+        }
+      }
+    },
+    "totali_annuali": {
+      "2025": {
+        "ristrutturazione": {
+          "totale": 123252.90,
+          "dettaglio": {
+            "Gennaio": 68252.90,
+            "Agosto": 4000.00,
+            "Settembre": 51000.00
+          }
+        },
+        "salari_stipendi": {
+          "totale": 1240052.00,
+          "SALARI": 839052.00,
+          "F24": 401000.00
+        },
+        "utenze": {
+          "totale": 231025.00
+        },
+        "commissioni_portali": {
+          "totale": 219108.43
+        },
+        "tasse_imposte": {
+          "totale": 300494.30
+        },
+        "mutui_finanziamenti": {
+          "totale": 191208.50
+        },
+        "canoni_servizi": {
+          "totale": 89239.84
+        },
+        "godimento_beni_terzi": {
+          "totale": 452000.00
+        },
+        "consulenze": {
+          "totale": 25000.00
+        },
+        "varie_eventuali": {
+          "totale": 200000.00
+        }
+      }
+    }
+  }

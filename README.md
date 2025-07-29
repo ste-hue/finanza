@@ -67,6 +67,7 @@ finanza/
 ## 🗄️ **DATABASE SUPABASE**
 
 ### **Schema Gerarchico**
+
 ```sql
 companies: ORTI + future aziende
 ├── categories: Categorie principali (Salari e Stipendi, Utenze, etc.)
@@ -75,6 +76,7 @@ companies: ORTI + future aziende
 ```
 
 ### **Tabelle Principali**
+
 - **`companies`**: Aziende (ORTI attualmente)
 - **`categories`**: Categorie padre (12 principali per uscite, 6 per entrate)
 - **`subcategories`**: Sottocategorie figlie
@@ -83,17 +85,20 @@ companies: ORTI + future aziende
 ## 🚀 **TECNOLOGIE**
 
 ### **Frontend**
+
 - **React 18** + **TypeScript** + **Vite**
 - **shadcn/ui** + **Radix UI** per componenti
 - **Tailwind CSS** per styling
 - **Supabase Client** per database
 
 ### **Backend**
+
 - **Supabase** (PostgreSQL managed)
 - **Python Scripts** per import/export Excel
 - **FastAPI** (legacy, da rimuovere)
 
 ### **Styling & UX**
+
 - **Zen Design System** con animazioni fluide
 - **Glassmorphism** e gradienti
 - **Responsive Design** ottimizzato
@@ -102,6 +107,7 @@ companies: ORTI + future aziende
 ## 🔧 **SETUP & AVVIO**
 
 ### **1. Supabase Setup**
+
 ```bash
 # Configurare le variabili d'ambiente
 cp .env.example .env.local
@@ -109,6 +115,7 @@ cp .env.example .env.local
 ```
 
 ### **2. Frontend**
+
 ```bash
 cd orti-finance-compass
 npm install
@@ -116,6 +123,7 @@ npm run dev    # http://localhost:8080 (o 8081/8082 se occupato)
 ```
 
 ### **3. Import Dati**
+
 ```bash
 cd orti-finance-api
 python unified_orti_finance.py    # Import Excel → Supabase
@@ -123,19 +131,23 @@ python unified_orti_finance.py    # Import Excel → Supabase
 
 ## 🐛 **PROBLEMI RISOLTI**
 
-### **✅ Calcoli Totali Duplicati** 
+### **✅ Calcoli Totali Duplicati**
+
 - **Problema**: Due chiamate API duplicate a `getFinancialData()`
 - **Soluzione**: Calcolo locale dei totali da singola chiamata API
 
 ### **✅ Differenze sempre 0€**
+
 - **Problema**: Mapping errato `revenue` → `revenues` nei totali
 - **Soluzione**: Mapping corretto nei calcoli mensili
 
 ### **✅ Query Supabase 400 Error**
+
 - **Problema**: Deep nested join ordering non supportato
 - **Soluzione**: Client-side sorting per `categoryType` e `month`
 
 ### **✅ Struttura Excel Mismatch**
+
 - **Problema**: Hardcoded categories non matching Excel
 - **Soluzione**: Struttura dinamica basata su database
 
@@ -149,34 +161,38 @@ python unified_orti_finance.py    # Import Excel → Supabase
 ## 🎯 **ROADMAP IMMEDIATA**
 
 ### **1. Struttura Gerarchica (PRIORITÀ ALTA)**
+
 - [ ] Implementare collapsing/expanding per categorie
-- [ ] 3 livelli per uscite, 2 livelli per entrate  
+- [ ] 3 livelli per uscite, 2 livelli per entrate
 - [ ] State management per expanded/collapsed
 - [ ] Animazioni smooth per transizioni
 
 ### **2. Predicted vs. Actual System**
+
 - [ ] UI per distinguere visivamente predicted vs actual
 - [ ] Workflow per aggiornare predictions → actual values
 - [ ] Variance tracking e alerts
 
 ### **3. Multi-Tab Completamento**
+
 - [ ] Tab "Previsioni": forecast engine
 - [ ] Tab "Analytics": grafici e trend
 - [ ] Tab "Dati": import/export tools
 
 ### **4. Performance & UX**
+
 - [ ] Lazy loading per grandi dataset
 - [ ] Caching intelligente
 - [ ] Mobile responsiveness ottimizzata
 
 ## 🔗 **URL & ACCESSI**
 
-- **App**: http://localhost:8082/
+- **App**: http://localhost:8080/
 - **Supabase Dashboard**: [supabase.com](https://supabase.com)
 - **Excel Source**: `Piano Finanziario Jul 24 2025.xlsx`
 
 ---
 
-**📝 Last Updated**: 29 Luglio 2025  
-**🚀 Status**: Development Ready  
+**📝 Last Updated**: 29 Luglio 2025
+**🚀 Status**: Development Ready
 **👨‍💻 Next Session**: Implementazione struttura gerarchica collassabile
