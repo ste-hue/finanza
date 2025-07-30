@@ -106,6 +106,22 @@ class EntryUpdate(BaseModel):
     is_projection: Optional[bool] = False
     notes: Optional[str] = None
 
+class CategoryCreate(BaseModel):
+    name: str
+    type_id: str  # 'revenue', 'expense', 'balance', 'financing'
+    is_calculated: Optional[bool] = False
+    sort_order: Optional[int] = 1
+
+class CategoryUpdate(BaseModel):
+    name: Optional[str] = None
+    type_id: Optional[str] = None
+    is_calculated: Optional[bool] = None
+    sort_order: Optional[int] = None
+
+class SubcategoryCreate(BaseModel):
+    name: str
+    sort_order: Optional[int] = 1
+
 # ============================================================================
 # CORE FINANCE MANAGER CLASS  
 # ============================================================================
@@ -260,6 +276,13 @@ class ORTIFinanceManager:
             await self.initialize_company()
             
         try:
+            # 🔥 PRIMA: Ottengo TUTTE le categorie della compagnia (anche se vuote)
+            all_categories_result = self.supabase.client.table('categories')\
+                .select('id, name, type_id, sort_order')\
+                .eq('company_id', self.company_id)\
+                .order('sort_order')\
+                .execute()
+            
             # Get all entries for the year  
             entries_result = self.supabase.client.table('entries')\
                 .select('*, subcategories!inner(name, categories!inner(name, type_id, company_id))')\
@@ -290,6 +313,19 @@ class ORTIFinanceManager:
                     "categories": {}
                 }
             }
+            
+            # 🎯 INIZIALIZZA tutte le categorie a ZERO
+            for category in all_categories_result.data:
+                cat_name = category['name']
+                cat_type = category['type_id']
+                
+                for target in ["consolidated", "projections", "combined"]:
+                    summary[target]["categories"][cat_name] = {
+                        "type": cat_type, 
+                        "total": 0,
+                        "id": category['id'],
+                        "sort_order": category['sort_order']
+                    }
             
             for entry in entries_result.data:
                 category = entry['subcategories']['categories']  
@@ -744,13 +780,173 @@ async def test_supabase():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Supabase connection error: {str(e)}")
 
+# ============================================================================
+# CATEGORY MANAGEMENT ENDPOINTS
+# ============================================================================
+
+@app.get("/companies/{company_name}/categories")
+async def get_categories(company_name: str):
+    """Get all categories for a company"""
+    try:
+        company = await supabase_service.get_or_create_company(company_name)
+        
+        categories_result = supabase_service.client.table('categories')\
+            .select('*, subcategories(id, name, sort_order)')\
+            .eq('company_id', company['id'])\
+            .order('sort_order')\
+            .execute()
+        
+        return {
+            "success": True,
+            "company": company_name,
+            "categories": categories_result.data
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error getting categories: {str(e)}")
+
+@app.post("/companies/{company_name}/categories")
+async def create_category(company_name: str, category: CategoryCreate):
+    """Create a new category"""
+    try:
+        company = await supabase_service.get_or_create_company(company_name)
+        
+        # Insert category
+        category_result = supabase_service.client.table('categories').insert({
+            'name': category.name,
+            'type_id': category.type_id,
+            'company_id': company['id'],
+            'is_calculated': category.is_calculated,
+            'sort_order': category.sort_order
+        }).execute()
+        
+        new_category = category_result.data[0]
+        
+        # Auto-create default subcategory
+        subcategory_name = "Totale" if category.type_id == "revenue" else "Saldo"
+        subcategory_result = supabase_service.client.table('subcategories').insert({
+            'name': subcategory_name,
+            'category_id': new_category['id'],
+            'sort_order': 1
+        }).execute()
+        
+        return {
+            "success": True,
+            "message": f"Category '{category.name}' created",
+            "category": new_category,
+            "subcategory": subcategory_result.data[0]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error creating category: {str(e)}")
+
+@app.put("/categories/{category_id}")
+async def update_category(category_id: str, category: CategoryUpdate):
+    """Update a category"""
+    try:
+        update_data = {k: v for k, v in category.dict().items() if v is not None}
+        
+        result = supabase_service.client.table('categories')\
+            .update(update_data)\
+            .eq('id', category_id)\
+            .execute()
+        
+        return {
+            "success": True,
+            "message": f"Category updated",
+            "category": result.data[0]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error updating category: {str(e)}")
+
+@app.delete("/categories/{category_id}")
+async def delete_category(category_id: str):
+    """Delete a category and all its subcategories and entries"""
+    try:
+        # First delete all entries
+        entries_result = supabase_service.client.table('entries')\
+            .delete()\
+            .in_('subcategory_id', 
+                 supabase_service.client.table('subcategories')
+                 .select('id')
+                 .eq('category_id', category_id)
+                 .execute().data)\
+            .execute()
+        
+        # Then delete subcategories
+        subcategories_result = supabase_service.client.table('subcategories')\
+            .delete()\
+            .eq('category_id', category_id)\
+            .execute()
+        
+        # Finally delete category
+        category_result = supabase_service.client.table('categories')\
+            .delete()\
+            .eq('id', category_id)\
+            .execute()
+        
+        return {
+            "success": True,
+            "message": f"Category deleted",
+            "deleted": {
+                "entries": len(entries_result.data or []),
+                "subcategories": len(subcategories_result.data or []),
+                "category": len(category_result.data or [])
+            }
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error deleting category: {str(e)}")
+
+@app.post("/categories/{category_id}/subcategories")
+async def create_subcategory(category_id: str, subcategory: SubcategoryCreate):
+    """Create a new subcategory"""
+    try:
+        result = supabase_service.client.table('subcategories').insert({
+            'name': subcategory.name,
+            'category_id': category_id,
+            'sort_order': subcategory.sort_order
+        }).execute()
+        
+        return {
+            "success": True,
+            "message": f"Subcategory '{subcategory.name}' created",
+            "subcategory": result.data[0]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error creating subcategory: {str(e)}")
+
+@app.delete("/subcategories/{subcategory_id}")
+async def delete_subcategory(subcategory_id: str):
+    """Delete a subcategory and all its entries"""
+    try:
+        # First delete all entries
+        entries_result = supabase_service.client.table('entries')\
+            .delete()\
+            .eq('subcategory_id', subcategory_id)\
+            .execute()
+        
+        # Then delete subcategory
+        subcategory_result = supabase_service.client.table('subcategories')\
+            .delete()\
+            .eq('id', subcategory_id)\
+            .execute()
+        
+        return {
+            "success": True,
+            "message": f"Subcategory deleted",
+            "deleted": {
+                "entries": len(entries_result.data or []),
+                "subcategory": len(subcategory_result.data or [])
+            }
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error deleting subcategory: {str(e)}")
+
 @app.get("/status")
 async def status():
     return {
         "status": "active",
         "timestamp": datetime.now().isoformat(),
-        "version": "2.1.0",
-        "description": "Unified ORTI Finance System with Consolidated vs Projection Tracking",
+        "version": "2.2.0",
+        "description": "Unified ORTI Finance System with Category Management",
         "data_types": {
             "consolidated": "Official data from INTUR balance sheet + actual monthly data",
             "projections": "Forecasted data marked with is_projection=True",
@@ -763,6 +959,10 @@ async def status():
             "/companies/{company_name}/data/{year}/{month}",
             "/companies/{company_name}/summary/{year}?consolidated_only=false&include_projections=true",
             "/companies/{company_name}/variance/{year}/{month}",
+            "/companies/{company_name}/categories (GET, POST)",
+            "/categories/{id} (PUT, DELETE)",
+            "/categories/{id}/subcategories (POST)",
+            "/subcategories/{id} (DELETE)",
             "/entry (PUT)",
             "/cleanup (POST)",
             "/test-supabase",
@@ -772,7 +972,8 @@ async def status():
             "consolidated_vs_projections": "System distinguishes between actual and forecasted data",
             "variance_analysis": "Compare projected vs actual performance",
             "official_reporting": "Use consolidated_only=true for official INTUR reporting",
-            "planning_mode": "Use combined data for business planning and forecasting"
+            "planning_mode": "Use combined data for business planning and forecasting",
+            "category_management": "Full CRUD operations for categories and subcategories"
         }
     }
 
