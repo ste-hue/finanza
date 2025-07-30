@@ -52,7 +52,7 @@ class SupabaseService:
             logger.error(f"Errore create_category: {e}")
             raise
     
-    async def get_or_create_subcategory(self, category_id: str, name: str, sort_order: int = 0) -> Dict[str, Any]:
+    def get_or_create_subcategory(self, category_id: str, name: str, sort_order: int = 0) -> Dict[str, Any]:
         """Ottiene o crea una subcategoria"""
         try:
             # Cerca se esiste già
@@ -130,7 +130,7 @@ class SupabaseService:
                     category = await self.create_category(company_id, category_name, "revenue")
                 
                 # Crea subcategoria main per entrate dirette
-                subcategory = await self.get_or_create_subcategory(category["id"], "Totale")
+                subcategory = self.get_or_create_subcategory(category["id"], "Totale")
                 
                 # Inserisci tutti i valori mensili
                 for month_year, value in monthly_data.items():
@@ -166,7 +166,7 @@ class SupabaseService:
                 # Trova la categoria esistente o creala
                 category = await self.get_category_by_name(company_id, category_key.replace("-", " ").title())
                 if category:
-                    subcategory = await self.get_or_create_subcategory(category["id"], "Totale")
+                    subcategory = self.get_or_create_subcategory(category["id"], "Totale")
                     await self.upsert_entry(subcategory["id"], int(year), int(month), float(value))
                     imported_entries += 1
             
@@ -177,7 +177,7 @@ class SupabaseService:
                     
                 category = await self.get_category_by_name(company_id, category_key.replace("-", " ").title())
                 if category:
-                    subcategory = await self.get_or_create_subcategory(category["id"], "Totale")
+                    subcategory = self.get_or_create_subcategory(category["id"], "Totale")
                     await self.upsert_entry(subcategory["id"], int(year), int(month), float(value))
                     imported_entries += 1
             
@@ -185,7 +185,7 @@ class SupabaseService:
             for balance_key, value in monthly_data.get("balances", {}).items():
                 category = await self.get_category_by_name(company_id, balance_key.replace("-", " ").title())
                 if category:
-                    subcategory = await self.get_or_create_subcategory(category["id"], "Saldo")
+                    subcategory = self.get_or_create_subcategory(category["id"], "Saldo")
                     await self.upsert_entry(subcategory["id"], int(year), int(month), float(value))
                     imported_entries += 1
             

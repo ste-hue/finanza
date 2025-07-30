@@ -175,7 +175,7 @@ class ORTIFinanceManager:
                         category_id = category_result.data[0]['id']
                         
                         # Get or create subcategory
-                        subcategory = await self.supabase.get_or_create_subcategory(category_id, "Main")
+                        subcategory = self.supabase.get_or_create_subcategory(category_id, "Main")
                         
                         # Upsert entry
                         self.supabase.client.table('entries').upsert({
@@ -207,7 +207,7 @@ class ORTIFinanceManager:
                     category_id = category_result.data[0]['id']
                     
                     # Get or create subcategory
-                    subcategory = await self.supabase.get_or_create_subcategory(category_id, "Main")
+                    subcategory = self.supabase.get_or_create_subcategory(category_id, "Main")
                     
                     for month, value in month_values.items():
                         self.supabase.client.table('entries').upsert({
@@ -238,7 +238,7 @@ class ORTIFinanceManager:
                     category_id = category_result.data[0]['id']
                     
                     # Get or create subcategory
-                    subcategory = await self.supabase.get_or_create_subcategory(category_id, "Main")
+                    subcategory = self.supabase.get_or_create_subcategory(category_id, "Main")
                     
                     for month, value in month_values.items():
                         year = 2025 if month <= 12 else 2026
@@ -1248,17 +1248,47 @@ async def bulk_import_financial_data(company_name: str, import_data: BulkImportD
                 
                 print(f"📊 Processing {category_name} - {data_type}")
                 
-                # Get category
+                # Get or create category dynamically
                 category = await finance_manager.supabase.get_category_by_name(
                     finance_manager.company_id, category_name
                 )
                 
                 if not category:
-                    errors.append(f"Category not found: {category_name}")
-                    continue
+                    # 🚀 AUTO-CREATE categoria mancante
+                    print(f"🆕 Creating new category: {category_name}")
+                    
+                    # Inferisce il tipo dai valori degli entries
+                    avg_value = sum(float(e['value']) for e in data_group['entries']) / len(data_group['entries'])
+                    
+                    if "saldo" in category_name.lower() or "banca" in category_name.lower() or "cassa" in category_name.lower():
+                        category_type = "balance"
+                    elif avg_value >= 0:
+                        category_type = "revenue"  # Entrate (valori positivi)
+                    else:
+                        category_type = "expense"   # Uscite (valori negativi)
+                    
+                    print(f"📊 Inferred type: {category_type} (avg_value: {avg_value})")
+                    
+                    # Trova il prossimo sort_order disponibile
+                    existing_categories = finance_manager.supabase.client.table('categories')\
+                        .select('sort_order')\
+                        .eq('company_id', finance_manager.company_id)\
+                        .eq('type_id', category_type)\
+                        .execute()
+                    
+                    max_sort_order = max([c['sort_order'] for c in existing_categories.data], default=0)
+                    next_sort_order = max_sort_order + 1
+                    
+                    # Crea la nuova categoria
+                    category = await finance_manager.supabase.create_category(
+                        finance_manager.company_id, 
+                        category_name, 
+                        category_type,
+                        next_sort_order
+                    )
                 
                 # Get or create subcategory
-                subcategory = await finance_manager.supabase.get_or_create_subcategory(
+                subcategory = finance_manager.supabase.get_or_create_subcategory(
                     category['id'], subcategory_name
                 )
                 
