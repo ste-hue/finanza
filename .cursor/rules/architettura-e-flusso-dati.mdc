@@ -1,0 +1,10 @@
+---
+alwaysApply: true
+---
+Il progetto è un monorepo con una chiara separazione:
+- frontend/: Interfaccia utente React.
+- orti-finance-api/: Server FastAPI che espone l'API.
+- supabase/: Configurazione del database.
+
+Flusso Dati Principale:
+UI React → API FastAPI → SupabaseService → Database Supabase

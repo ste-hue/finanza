@@ -1,0 +1,9 @@
+---
+globs: orti-finance-api/**/*.py
+alwaysApply: false
+---
+- File Principale: `orti-finance-api/main.py` contiene tutta la logica API e di business.
+- Stile: `snake_case` per variabili e funzioni.
+- Typing: Usare sempre i type hints di Python (es. `def mia_funzione(nome: str) -> bool:`).
+- Modelli API: Usare Pydantic (`BaseModel`) per definire i corpi delle richieste e delle risposte. Questo garantisce la validazione automatica.
+- Lingua: I commenti e le stringhe per l'utente sono in italiano.

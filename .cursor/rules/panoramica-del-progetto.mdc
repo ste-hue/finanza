@@ -1,0 +1,10 @@
+---
+alwaysApply: true
+---
+- Obiettivo: Creare un'applicazione web per la pianificazione e l'analisi finanziaria della società turistica ORTI.
+- Funzionalità Chiave:
+    1. Aggregare entrate, uscite e cash flow per più anni.
+    2. Distinguere nettamente tra dati "Consolidati" (reali) e "Previsionali" (stime).
+    3. Calcolare e visualizzare la "Varianza" (scostamento) tra previsioni e dati reali.
+    4. Fornire dashboard per analisi strategiche (salute aziendale, stagionalità, supporto a decisioni).
+- Business Model: Altamente stagionale, con picco operativo da Aprile a Ottobre.

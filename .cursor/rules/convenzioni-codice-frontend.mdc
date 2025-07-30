@@ -1,0 +1,8 @@
+---
+globs: frontend/src/**/*.{ts,tsx}
+alwaysApply: false
+---
+- Stile: `camelCase` per variabili e funzioni, `PascalCase` per i componenti React (es. `SimpleFinanceApp`).
+- Componenti: Creare componenti funzionali e utilizzare gli hooks (`useState`, `useEffect`).
+- Logica API: La logica per chiamare il backend dovrebbe essere centralizzata in hooks custom (es. `useFinanceAPI.ts`).
+- Stato: Gestire lo stato in modo che possa accogliere la struttura dati completa dell'API `summary` (`consolidated`, `projections`, `combined`).

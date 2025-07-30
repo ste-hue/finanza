@@ -1,0 +1,22 @@
+---
+alwaysApply: true
+---
+Quando si parla di dati finanziari, usare sempre questa terminologia:
+
+- Consolidato (Actual):
+    - Rappresenta dati finanziari REALI e VERIFICATI.
+    - Proviene da fonti ufficiali (bilanci, movimenti bancari).
+    - Nel database, corrisponde a un record nella tabella `entries` con `is_projection = false`.
+
+- Previsionale (Forecast/Projection):
+    - Rappresenta STIME o PROIEZIONI future.
+    - Proviene da piani operativi, come il file Excel "Piano Finanziario".
+    - Nel database, corrisponde a un record nella tabella `entries` con `is_projection = true`.
+
+- Combinato (Combined):
+    - La SOMMA di dati `Consolidati` e `Previsionali` per un dato periodo (es. un anno intero).
+    - Usato per la pianificazione e per avere una visione completa dell'anno in corso.
+
+- Varianza (Variance):
+    - La DIFFERENZA matematica tra il valore `Previsionale` e il valore `Consolidato` per una specifica voce in un dato mese/periodo.
+    - Varianza = Consolidato - Previsionale.

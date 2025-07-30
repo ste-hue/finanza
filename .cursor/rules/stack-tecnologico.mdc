@@ -1,0 +1,8 @@
+---
+alwaysApply: true
+---
+- Backend: Python 3.11 con FastAPI.
+- Frontend: React con TypeScript e Vite.
+- Database: Supabase (PostgreSQL).
+- Servizi API DB: La logica di interazione con Supabase è incapsulata in orti-finance-api/supabase_service.py.
+- Deployment: Docker e docker-compose.yml.
