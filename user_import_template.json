@@ -1,0 +1,95 @@
+{
+  "company_name": "ORTI",
+  "import_metadata": {
+    "source": "I tuoi dati - sostituisci con il nome del file",
+    "import_date": "2025-01-30",
+    "description": "Template per importare i tuoi dati finanziari"
+  },
+  "data": [
+    {
+      "category_name": "Entrate Hotel",
+      "subcategory_name": "Totale",
+      "data_type": "consolidated",
+      "is_projection": false,
+      "entries": [
+        {
+          "year": 2024,
+          "month": 1,
+          "value": 15000.00,
+          "notes": "Gennaio 2024 - Dati reali"
+        },
+        {
+          "year": 2024,
+          "month": 2,
+          "value": 22000.00,
+          "notes": "Febbraio 2024 - Dati reali"
+        }
+      ]
+    },
+    {
+      "category_name": "Entrate Hotel",
+      "subcategory_name": "Totale", 
+      "data_type": "projection",
+      "is_projection": true,
+      "entries": [
+        {
+          "year": 2025,
+          "month": 7,
+          "value": 85000.00,
+          "notes": "Luglio 2025 - PREVISIONE"
+        },
+        {
+          "year": 2025,
+          "month": 8,
+          "value": 95000.00,
+          "notes": "Agosto 2025 - PREVISIONE"
+        }
+      ]
+    },
+    {
+      "category_name": "Salari",
+      "subcategory_name": "Totale",
+      "data_type": "consolidated", 
+      "is_projection": false,
+      "entries": [
+        {
+          "year": 2024,
+          "month": 1,
+          "value": -12000.00,
+          "notes": "Stipendi Gennaio 2024"
+        }
+      ]
+    },
+    {
+      "category_name": "Salari",
+      "subcategory_name": "Totale",
+      "data_type": "projection",
+      "is_projection": true, 
+      "entries": [
+        {
+          "year": 2025,
+          "month": 7,
+          "value": -15000.00,
+          "notes": "Stipendi previsti Luglio 2025"
+        }
+      ]
+    }
+  ],
+  "category_mapping": {
+    "ENTRATE": ["Entrate Hotel", "Residence", "CVM", "Supermercato", "Rientro Sospesi", "Caparre Intur", "TOTALE ENTRATE"],
+    "USCITE": ["Salari", "Utenze", "Materie Prime", "Tasse", "Commissioni", "Mutui", "Consulenze", "Godimento Beni", "Varie", "Canoni", "Ristr. Apt", "Deposito Fitto"],
+    "BANCHE": ["Saldo MPS", "Saldo Intesa", "CASSA CONTANTI"]
+  },
+  "validation_rules": {
+    "required_fields": ["category_name", "year", "month", "value", "is_projection"],
+    "data_types": {
+      "consolidated": "Dati REALI e verificati (colore VERDE)",
+      "projection": "Stime e previsioni (colore ARANCIONE)"
+    },
+    "value_rules": {
+      "entrate": "Valori POSITIVI (+)",
+      "uscite": "Valori NEGATIVI (-)",
+      "saldi": "Positivi o negativi in base alla situazione"
+    }
+  }
+}

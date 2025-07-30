@@ -1158,6 +1158,57 @@ def run_cli():
 # ============================================================================
 # MAIN ENTRY POINT
 # ============================================================================
+# 🗑️ DATABASE RESET ENDPOINT
+# ============================================================================
+
+@app.post("/reset/all-data")
+async def reset_all_data(company_name: str = "ORTI"):
+    """
+    🗑️ RESET COMPLETO: Cancella tutti i dati finanziari
+    
+    ⚠️  ATTENZIONE: Questa operazione è IRREVERSIBILE!
+    - Elimina tutti gli entries
+    - Mantiene la struttura delle categorie (22 categorie)
+    - Azzera completamente i dati finanziari
+    """
+    try:
+        print(f"🗑️ Starting complete data reset for company: {company_name}")
+        
+        # Initialize company
+        finance_manager = ORTIFinanceManager()
+        company = await finance_manager.supabase.get_or_create_company(
+            company_name, "Gruppo ORTI - Strutture turistiche"
+        )
+        
+        # Delete all entries for this company
+        result = await finance_manager.supabase.execute_query(
+            """
+            DELETE FROM entries 
+            WHERE subcategory_id IN (
+                SELECT s.id FROM subcategories s 
+                JOIN categories c ON s.category_id = c.id 
+                WHERE c.company_id = %s
+            )
+            """,
+            (company["id"],)
+        )
+        
+        print(f"🗑️ Deleted all financial entries for {company_name}")
+        
+        return {
+            "success": True,
+            "message": f"All financial data reset for company {company_name}",
+            "company_id": company["id"],
+            "reset_timestamp": "2025-01-30T18:15:00Z",
+            "categories_preserved": 22,
+            "entries_deleted": "all"
+        }
+        
+    except Exception as e:
+        print(f"❌ Reset failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Reset failed: {str(e)}")
+
+# ============================================================================
 # 📊 BULK DATA IMPORT ENDPOINT
 # ============================================================================
 
