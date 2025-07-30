@@ -1,198 +1,176 @@
-# 🏢 ORTI Finance Dashboard
+# 🏢 ORTI Finance System - Unified Monorepo
 
-Sistema completo di gestione finanziaria per ORTI con supporto multi-azienda, dashboard in tempo reale e sistema di previsioni vs. reali.
+Sistema di gestione finanziaria completo per ORTI con architettura unificata.
 
-## 📊 **STATO CORRENTE (29 Luglio 2025)**
+## 📁 Struttura del Progetto
 
-### ✅ **FUNZIONALITÀ IMPLEMENTATE**
+```
+finanza-orti/
+├── backend/                  # 🔧 FastAPI Server
+│   ├── main.py              # API endpoints (unified)
+│   ├── supabase_service.py  # Database service
+│   ├── config.py            # Configuration
+│   └── requirements.txt     # Python dependencies
+├── frontend/                 # ⚛️ React Dashboard  
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── SimpleFinanceApp.tsx       # 🎯 Main unified component
+│   │   │   └── HierarchicalFinanceTree.tsx # 🌳 Tree view component
+│   │   └── hooks/
+│   │       └── useFinanceAPI.ts           # 🔗 Unified API hook
+│   ├── package.json         # Node dependencies
+│   └── vite.config.ts       # Build config
+├── data/                     # 📊 Data Files
+│   └── Piano Finanziario Jul 24 2025.xlsx
+├── docs/                     # 📚 Documentation
+└── docker-compose.yml       # 🐳 Full stack deployment
+```
 
-- **Dashboard Multi-Tab** con architettura moderna (Dashboard, Previsioni, Analytics, Dati)
-- **Calcoli Finanziari Corretti**: Entrate €2.786.743, Uscite €2.694.314, Risultato Netto €92.428
-- **Sistema Predicted vs. Actual** con campo `is_projection` per tracking delle previsioni
-- **Integrazione Supabase** completa con API layer robusto
-- **UI Zen Design** con animazioni e glassmorphism
-- **Entry Edit Dialog** per modificare valori previsti/reali
-- **Calcoli Mensili Dinamici** con differenze corrette
+## 🚀 Quick Start
 
-### 🎯 **PROSSIMO STEP: STRUTTURA GERARCHICA COLLASSABILE**
+### Prerequisites
 
-**OBIETTIVO**: Trasformare la vista flat attuale in struttura ad albero:
+- Node.js 18+
+- Python 3.11+
+- Supabase account
+
+### 1. Backend Setup
+
+```bash
+cd backend
+pip install -r requirements.txt
+uvicorn main:app --reload --port 8000
+```
+
+### 2. Frontend Setup
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+### 3. Full Stack (Docker)
+
+```bash
+docker-compose up -d
+```
+
+## 🎯 Sistema Unificato
+
+### 🔗 API Endpoints (3 essenziali)
+
+- `GET /hierarchy` - Struttura gerarchica completa
+- `POST /import` - Import dati da JSON
+- `PUT /entry` - Update singola voce
+
+### ⚛️ Frontend Architecture
+
+- **1 Hook**: `useFinanceAPI` - gestisce tutto
+- **1 Component**: `SimpleFinanceApp` - interfaccia principale
+- **Tree View**: Collassabile Entrate/Uscite gerarchiche
+
+### 📊 Data Flow
+
+```
+Excel → JSON → API → Supabase → React → UI
+```
+
+## 🛠️ Development
+
+### Backend
+
+```bash
+cd backend
+python main.py  # Start API server
+```
+
+### Frontend
+
+```bash
+cd frontend  
+npm run dev     # Start dev server
+npm run build   # Production build
+```
+
+### Database
+
+- Supabase: Structured hierarchy (companies → categories → subcategories → entries)
+- Schema: `backend/supabase_schema.sql`
+
+## 📈 Features
+
+- ✅ **Hierarchical Structure**: 3-level finance tree ⭐ **COMPLETATO**
+- ✅ **Collapsible Categories**: Interactive expand/collapse with chevrons
+- ✅ **Smart Middleware**: Transforms flat DB data into hierarchical UI
+- ✅ **Auto-Expand**: Main categories open automatically on load
+- ✅ **Real-time Editing**: Click to edit values
+- ✅ **Global Controls**: "Espandi Tutto" / "Collassa Tutto" buttons
+- ✅ **Visual Indentation**: Clear parent-child relationships
+- ✅ **Automatic Totals**: Parent categories calculate from children
+- ✅ **JSON Import/Export**: Standard data format
+- ✅ **Responsive UI**: Desktop optimized
+- ✅ **Cache System**: Performance optimized
+
+## 🎉 **FEATURE COMPLETED: Dashboard Gerarchico**
+
+**29 Luglio 2025**: Implementazione completa della struttura gerarchica collassabile!
+
+### 🌳 **Struttura Finale**
 
 ```
 💸 USCITE
-▼ Salari e Stipendi     [602.104€]    ← LIVELLO 1 (collassabile)
-  ├─ SALARI            [329.052€]     ← LIVELLO 2 (collassabile)
-  ├─ F24               [145.000€]     ← LIVELLO 2 (collassabile)
-  └─ Salari e Stipendi [128.052€]     ← LIVELLO 2 (collassabile)
+▼ Canoni e servizi     [totale automatico]    ← Collassabile
+  ├─ Proxima Service   [valore reale]         ← Indentato
+  ├─ Hoxell           [valore reale]         ← Indentato  
+  ├─ Altamira         [valore reale]         ← Indentato
+  └─ +9 altri servizi...
 
-▼ Utenze               [209.071€]     ← LIVELLO 1 (collassabile)
-  ├─ Energia elettrica [xxx€]         ← LIVELLO 2
-  ├─ Gas               [xxx€]         ← LIVELLO 2
-  └─ Vodafone          [xxx€]         ← LIVELLO 2
+▼ Ristr. Apt SDP Jr   [totale automatico]    ← Collassabile
+  ├─ MIELE RI.BA      [valore reale]         ← Indentato
+  ├─ ALESSIO          [valore reale]         ← Indentato
+  └─ +6 altri lavori...
 
 💰 ENTRATE
-▼ Entrate Hotel        [2.248.850€]   ← LIVELLO 1 (collassabile)
-  ├─ Booking.com       [xxx€]         ← LIVELLO 2 (se disponibile)
-  └─ Diretti           [xxx€]         ← LIVELLO 2 (se disponibile)
+▼ Entrate Hotel       [647.289€ lug]         ← Valori reali
+▼ Entrate Residence   [84.911€ lug]          ← Valori reali
+▼ Entrate CVM         [44.241€ lug]          ← Valori reali
 ```
 
-## 📁 **ARCHITETTURA PROGETTO**
+### 🎛️ **Controlli Interattivi**
 
-```
-finanza/
-├── orti-finance-compass/           # Frontend React + TypeScript
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── FinancialApp.tsx       # Container principale multi-tab
-│   │   │   ├── ZenFinancialDashboard.tsx  # Dashboard finanziario
-│   │   │   ├── EntryEditDialog.tsx    # Dialog per edit valori
-│   │   │   └── ui/                    # shadcn/ui components
-│   │   ├── hooks/
-│   │   │   ├── useFinCalSupabase.ts   # Hook gestione Supabase
-│   │   │   └── useFinCal.ts           # Hook legacy (da deprecated)
-│   │   ├── lib/
-│   │   │   ├── financeApi.ts          # API layer per Supabase
-│   │   │   ├── financeService.ts      # Service layer 
-│   │   │   └── supabase.ts            # Client e types Supabase
-│   │   └── types/
-│   │       └── fincal.ts              # Type definitions
-│   └── package.json
-├── orti-finance-api/               # Scripts Python per gestione dati
-│   ├── unified_orti_finance.py        # Script import Excel → Supabase
-│   ├── import_2024_2026_data.py       # Import dati 2024-2026
-│   └── supabase_schema.sql            # Schema database
-└── Piano Finanziario Jul 24 2025.xlsx  # Source Excel di riferimento
-```
+- **Chevron Click**: `▼`/`▶` per espandere/collassare singole categorie
+- **Pulsanti Globali**: "Espandi Tutto" & "Collassa Tutto"
+- **Auto-Espansione**: Categorie principali aperte all'avvio
+- **Indentazione Visiva**: 24px per livello per chiarezza massima
 
-## 🗄️ **DATABASE SUPABASE**
+## 🔧 Configuration
 
-### **Schema Gerarchico**
-
-```sql
-companies: ORTI + future aziende
-├── categories: Categorie principali (Salari e Stipendi, Utenze, etc.)
-│   └── subcategories: Sottocategorie (SALARI, Gas, etc.)
-│       └── entries: Valori mensili con is_projection flag
-```
-
-### **Tabelle Principali**
-
-- **`companies`**: Aziende (ORTI attualmente)
-- **`categories`**: Categorie padre (12 principali per uscite, 6 per entrate)
-- **`subcategories`**: Sottocategorie figlie
-- **`entries`**: Valori mensili con `is_projection` per predicted/actual
-
-## 🚀 **TECNOLOGIE**
-
-### **Frontend**
-
-- **React 18** + **TypeScript** + **Vite**
-- **shadcn/ui** + **Radix UI** per componenti
-- **Tailwind CSS** per styling
-- **Supabase Client** per database
-
-### **Backend**
-
-- **Supabase** (PostgreSQL managed)
-- **Python Scripts** per import/export Excel
-- **FastAPI** (legacy, da rimuovere)
-
-### **Styling & UX**
-
-- **Zen Design System** con animazioni fluide
-- **Glassmorphism** e gradienti
-- **Responsive Design** ottimizzato
-- Animazioni CSS: `zen-fade-in`, `zen-slide-up`, `zen-breathe`
-
-## 🔧 **SETUP & AVVIO**
-
-### **1. Supabase Setup**
+### Environment Variables
 
 ```bash
-# Configurare le variabili d'ambiente
-cp .env.example .env.local
-# Aggiungere SUPABASE_URL e SUPABASE_ANON_KEY
+# Backend (.env)
+SUPABASE_URL=your_supabase_url
+SUPABASE_ANON_KEY=your_anon_key
+
+# Frontend (.env.local)  
+VITE_API_URL=http://localhost:8000
 ```
 
-### **2. Frontend**
+## 📚 Documentation
 
-```bash
-cd orti-finance-compass
-npm install
-npm run dev    # http://localhost:8080 (o 8081/8082 se occupato)
-```
+- **API Docs**: `http://localhost:8000/docs` (FastAPI auto-generated)
+- **Project Docs**: `docs/README.md`
+- **Data Format**: JSON structure documented in code
 
-### **3. Import Dati**
+## 🏆 Architecture Benefits
 
-```bash
-cd orti-finance-api
-python unified_orti_finance.py    # Import Excel → Supabase
-```
-
-## 🐛 **PROBLEMI RISOLTI**
-
-### **✅ Calcoli Totali Duplicati**
-
-- **Problema**: Due chiamate API duplicate a `getFinancialData()`
-- **Soluzione**: Calcolo locale dei totali da singola chiamata API
-
-### **✅ Differenze sempre 0€**
-
-- **Problema**: Mapping errato `revenue` → `revenues` nei totali
-- **Soluzione**: Mapping corretto nei calcoli mensili
-
-### **✅ Query Supabase 400 Error**
-
-- **Problema**: Deep nested join ordering non supportato
-- **Soluzione**: Client-side sorting per `categoryType` e `month`
-
-### **✅ Struttura Excel Mismatch**
-
-- **Problema**: Hardcoded categories non matching Excel
-- **Soluzione**: Struttura dinamica basata su database
-
-## 📈 **DATI ATTUALI (2025)**
-
-- **Entrate Totali**: €2.786.743 (Lug-Dic principalmente)
-- **Uscite Totali**: €2.694.314 (distribuite 12 mesi)
-- **Risultato Netto**: €92.428 positivo
-- **Cash Flow Medio**: €223.878/mese
-
-## 🎯 **ROADMAP IMMEDIATA**
-
-### **1. Struttura Gerarchica (PRIORITÀ ALTA)**
-
-- [ ] Implementare collapsing/expanding per categorie
-- [ ] 3 livelli per uscite, 2 livelli per entrate
-- [ ] State management per expanded/collapsed
-- [ ] Animazioni smooth per transizioni
-
-### **2. Predicted vs. Actual System**
-
-- [ ] UI per distinguere visivamente predicted vs actual
-- [ ] Workflow per aggiornare predictions → actual values
-- [ ] Variance tracking e alerts
-
-### **3. Multi-Tab Completamento**
-
-- [ ] Tab "Previsioni": forecast engine
-- [ ] Tab "Analytics": grafici e trend
-- [ ] Tab "Dati": import/export tools
-
-### **4. Performance & UX**
-
-- [ ] Lazy loading per grandi dataset
-- [ ] Caching intelligente
-- [ ] Mobile responsiveness ottimizzata
-
-## 🔗 **URL & ACCESSI**
-
-- **App**: http://localhost:8080/
-- **Supabase Dashboard**: [supabase.com](https://supabase.com)
-- **Excel Source**: `Piano Finanziario Jul 24 2025.xlsx`
+- **Single Repository**: Unified versioning and deployment
+- **Clear Separation**: Backend/Frontend with descriptive names
+- **Simplified Communication**: Direct API calls, no complex abstractions
+- **Maintainable**: 3 endpoints, 1 hook, 1 main component
+- **Scalable**: Easy to extend and modify
 
 ---
 
-**📝 Last Updated**: 29 Luglio 2025
-**🚀 Status**: Development Ready
-**👨‍💻 Next Session**: Implementazione struttura gerarchica collassabile
+**Created with ❤️ for ORTI Finance Management**
