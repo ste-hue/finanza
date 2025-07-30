@@ -1,0 +1,42 @@
+#!/bin/bash
+
+# 🎯 ORTI Finance - Comando Ultra-Semplice
+# Uso: ./orti [start|stop|test|status]
+
+case "${1:-start}" in
+  "start")
+    echo "🚀 Avvio ORTI Finance..."
+    ./start-orti.sh
+    ;;
+  "stop")
+    echo "🛑 Stop ORTI Finance..."
+    ./stop-orti.sh
+    ;;
+  "test")
+    echo "🧪 Test Sistema..."
+    ./test_crud_complete.sh
+    ;;
+  "status")
+    echo "📊 Status Sistema..."
+    echo ""
+    echo "🔧 Backend (8000):"
+    curl -s "http://localhost:8000" | jq '.message' 2>/dev/null || echo "❌ Non attivo"
+    echo ""
+    echo "🎨 Frontend (8080):"
+    curl -s "http://localhost:8080" | head -1 | grep -q "DOCTYPE" && echo "✅ Attivo" || echo "❌ Non attivo"
+    echo ""
+    echo "📍 URLs:"
+    echo "   Frontend: http://localhost:8080"
+    echo "   Backend:  http://localhost:8000"
+    ;;
+  *)
+    echo "🎯 ORTI Finance - Comandi:"
+    echo ""
+    echo "  ./orti start   🚀 Avvia sistema"
+    echo "  ./orti stop    🛑 Ferma sistema"  
+    echo "  ./orti test    🧪 Test completo"
+    echo "  ./orti status  📊 Controlla stato"
+    echo ""
+    echo "📍 Quick access: http://localhost:8080"
+    ;;
+esac

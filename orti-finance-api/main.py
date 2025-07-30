@@ -730,9 +730,109 @@ async def get_projection_variance_endpoint(company_name: str, year: int, month: 
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Variance analysis error: {str(e)}")
 
+# ============================================================================
+# 📊 COMPLETE CRUD ENDPOINTS FOR ENTRIES
+# ============================================================================
+
+@app.post("/entries")
+async def create_entry(data: EntryUpdate):
+    """Create new entry"""
+    try:
+        result = await supabase_service.upsert_entry(
+            subcategory_id=data.subcategory_id,
+            year=data.year,
+            month=data.month,
+            value=data.value,
+            is_projection=data.is_projection,
+            notes=data.notes
+        )
+        
+        return {
+            "success": True,
+            "message": f"Entry created for {data.month:02d}-{data.year}",
+            "data": result
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Create error: {str(e)}")
+
+@app.get("/entries/{entry_id}")
+async def get_entry(entry_id: str):
+    """Get single entry by ID"""
+    try:
+        result = supabase_service.client.table('entries')\
+            .select('*, subcategories!inner(name, categories!inner(name, type_id))')\
+            .eq('id', entry_id)\
+            .single()\
+            .execute()
+        
+        if not result.data:
+            raise HTTPException(status_code=404, detail="Entry not found")
+            
+        return {
+            "success": True,
+            "data": result.data
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Get error: {str(e)}")
+
+@app.get("/entries")
+async def get_entries(
+    subcategory_id: Optional[str] = None,
+    year: Optional[int] = None,
+    month: Optional[int] = None,
+    is_projection: Optional[bool] = None,
+    limit: int = 100
+):
+    """Get entries with optional filters"""
+    try:
+        query = supabase_service.client.table('entries')\
+            .select('*, subcategories!inner(name, categories!inner(name, type_id))')
+        
+        if subcategory_id:
+            query = query.eq('subcategory_id', subcategory_id)
+        if year:
+            query = query.eq('year', year)
+        if month:
+            query = query.eq('month', month)
+        if is_projection is not None:
+            query = query.eq('is_projection', is_projection)
+            
+        query = query.limit(limit).order('year.desc,month.desc')
+        result = query.execute()
+        
+        return {
+            "success": True,
+            "count": len(result.data),
+            "data": result.data
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Get entries error: {str(e)}")
+
+@app.put("/entries/{entry_id}")
+async def update_entry_by_id(entry_id: str, data: EntryUpdate):
+    """Update entry by ID"""
+    try:
+        update_data = {k: v for k, v in data.dict().items() if v is not None}
+        
+        result = supabase_service.client.table('entries')\
+            .update(update_data)\
+            .eq('id', entry_id)\
+            .execute()
+        
+        if not result.data:
+            raise HTTPException(status_code=404, detail="Entry not found")
+            
+        return {
+            "success": True,
+            "message": f"Entry updated",
+            "data": result.data[0]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Update error: {str(e)}")
+
 @app.put("/entry")
 async def update_entry(data: EntryUpdate):
-    """Update single entry (for frontend editing)"""
+    """Update single entry (LEGACY - for frontend compatibility)"""
     try:
         result = await supabase_service.upsert_entry(
             subcategory_id=data.subcategory_id,
@@ -750,6 +850,26 @@ async def update_entry(data: EntryUpdate):
         }
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Update error: {str(e)}")
+
+@app.delete("/entries/{entry_id}")
+async def delete_entry(entry_id: str):
+    """Delete entry by ID"""
+    try:
+        result = supabase_service.client.table('entries')\
+            .delete()\
+            .eq('id', entry_id)\
+            .execute()
+        
+        if not result.data:
+            raise HTTPException(status_code=404, detail="Entry not found")
+            
+        return {
+            "success": True,
+            "message": "Entry deleted successfully",
+            "deleted": result.data[0]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Delete error: {str(e)}")
 
 @app.post("/cleanup")
 async def cleanup_database():
@@ -1037,6 +1157,149 @@ def run_cli():
 
 # ============================================================================
 # MAIN ENTRY POINT
+# ============================================================================
+# 📊 BULK DATA IMPORT ENDPOINT
+# ============================================================================
+
+class BulkImportData(BaseModel):
+    """Schema for bulk data import from JSON format"""
+    company_name: str
+    import_metadata: Dict[str, Any]
+    data: List[Dict[str, Any]]
+    category_mapping: Optional[Dict[str, List[str]]] = None
+    validation_rules: Optional[Dict[str, Any]] = None
+
+@app.post("/api/companies/{company_name}/bulk-import")
+async def bulk_import_financial_data(company_name: str, import_data: BulkImportData):
+    """
+    🚀 BULK IMPORT endpoint for financial data
+    
+    Supports both CONSOLIDATED and PROJECTION data with proper separation
+    Expected format: See orti_data_import_format.json
+    """
+    try:
+        print(f"🚀 Starting bulk import for company: {company_name}")
+        
+        # Initialize finance manager
+        finance_manager = ORTIFinanceManager()
+        await finance_manager.initialize_company(company_name)
+        
+        total_imported = 0
+        errors = []
+        
+        # Process each data group
+        for data_group in import_data.data:
+            try:
+                category_name = data_group['category_name']
+                subcategory_name = data_group.get('subcategory_name', 'Totale')
+                is_projection = data_group['is_projection']
+                data_type = data_group['data_type']
+                
+                print(f"📊 Processing {category_name} - {data_type}")
+                
+                # Get category
+                category = await finance_manager.supabase.get_category_by_name(
+                    finance_manager.company_id, category_name
+                )
+                
+                if not category:
+                    errors.append(f"Category not found: {category_name}")
+                    continue
+                
+                # Get or create subcategory
+                subcategory = await finance_manager.supabase.get_or_create_subcategory(
+                    category['id'], subcategory_name
+                )
+                
+                # Process each entry
+                for entry in data_group['entries']:
+                    try:
+                        # Upsert the entry
+                        await finance_manager.supabase.upsert_entry(
+                            subcategory_id=subcategory['id'],
+                            year=entry['year'],
+                            month=entry['month'],
+                            value=float(entry['value']),
+                            is_projection=is_projection,
+                            notes=entry.get('notes', f"{data_type} - {category_name}")
+                        )
+                        total_imported += 1
+                        
+                    except Exception as entry_error:
+                        error_msg = f"Error importing entry {category_name} {entry['year']}-{entry['month']:02d}: {entry_error}"
+                        errors.append(error_msg)
+                        print(f"⚠️ {error_msg}")
+                        
+            except Exception as group_error:
+                error_msg = f"Error processing group {data_group.get('category_name', 'Unknown')}: {group_error}"
+                errors.append(error_msg)
+                print(f"⚠️ {error_msg}")
+        
+        return {
+            "success": True,
+            "company_name": company_name,
+            "total_imported": total_imported,
+            "errors": errors,
+            "import_metadata": import_data.import_metadata
+        }
+        
+    except Exception as e:
+        print(f"❌ Bulk import failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Bulk import failed: {str(e)}")
+
+@app.get("/api/companies/{company_name}/data-summary")
+async def get_data_type_summary(company_name: str, year: int = 2025):
+    """
+    📊 Get summary of consolidated vs projection data
+    
+    Returns separate totals and counts for each data type
+    """
+    try:
+        finance_manager = ORTIFinanceManager()
+        await finance_manager.initialize_company(company_name)
+        
+        # Get consolidated data (is_projection = false)
+        consolidated_result = finance_manager.supabase.client.table('entries')\
+            .select('*, subcategories!inner(categories!inner(company_id, type_id))')\
+            .eq('subcategories.categories.company_id', finance_manager.company_id)\
+            .eq('year', year)\
+            .eq('is_projection', False)\
+            .execute()
+        
+        # Get projection data (is_projection = true)  
+        projection_result = finance_manager.supabase.client.table('entries')\
+            .select('*, subcategories!inner(categories!inner(company_id, type_id))')\
+            .eq('subcategories.categories.company_id', finance_manager.company_id)\
+            .eq('year', year)\
+            .eq('is_projection', True)\
+            .execute()
+        
+        # Calculate totals
+        consolidated_total = sum(entry['value'] for entry in consolidated_result.data)
+        projection_total = sum(entry['value'] for entry in projection_result.data)
+        
+        return {
+            "company_name": company_name,
+            "year": year,
+            "consolidated": {
+                "total_value": consolidated_total,
+                "entries_count": len(consolidated_result.data),
+                "data_type": "consolidated",
+                "description": "Dati reali e verificati"
+            },
+            "projection": {
+                "total_value": projection_total,
+                "entries_count": len(projection_result.data),
+                "data_type": "projection", 
+                "description": "Stime e previsioni"
+            },
+            "warning": "❌ Non sommare i totali consolidated + projection per evitare doppi conteggi"
+        }
+        
+    except Exception as e:
+        print(f"❌ Error getting data summary: {e}")
+        raise HTTPException(status_code=500, detail=f"Error getting data summary: {str(e)}")
+
 # ============================================================================
 
 if __name__ == "__main__":
