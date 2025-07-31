@@ -1,15 +1,31 @@
 ---
-globs: orti-finance-api/main.py, frontend/src/**/*.{ts,tsx}
+globs: orti-finance-api/main.py, orti-finance-compass/src/**/*.{ts,tsx}
 alwaysApply: false
 ---
-- Endpoint `summary`:
-    - `GET /companies/{company_name}/summary/{year}` è l'endpoint principale per le dashboard.
-    - Deve sempre restituire la struttura a 3 livelli: `consolidated`, `projections`, `combined`, per permettere al frontend di mostrare i dati in modo separato e aggregato.
+Summary Endpoint:
 
-- Endpoint `variance`:
-    - `GET /companies/{company_name}/variance/{year}/{month}` è usato per l'analisi degli scostamenti.
-    - Confronta i dati con `is_projection=true` vs `is_projection=false` per lo stesso periodo.
+GET /companies/{company_name}/summary/{year}: Principale per dashboard.
 
-- Modifiche Dati:
-    - L'aggiornamento di un singolo valore avviene tramite `PUT /entry`.
-    - L'importazione di massa dovrebbe avvenire tramite endpoint dedicati (`/import/...`) che gestiscano correttamente l'impostazione del flag `is_projection`.
+Restituisce: consolidated (reali), projections (previsioni), combined (somma).
+
+Opzionale: ?consolidated_only=true per solo reali.
+
+Variance Endpoint:
+
+GET /companies/{company_name}/variance/{year}/{month}: Analisi scostamenti.
+
+Confronta is_projection=true vs false; calcola % e impatto.
+
+CRUD Endpoints:
+
+PUT /entry: Aggiorna valore; usa UUID e is_projection.
+
+POST /import/...: Import massa con flag is_projection.
+
+AI Endpoints:
+
+POST /ai-analysis: Analisi sequenziale con tipo (es. variance_investigation).
+
+GET /ai-analysis/types: Lista tipi.
+
+Generali: Tutti endpoint restituiscono JSON con success: true; errori con status code.

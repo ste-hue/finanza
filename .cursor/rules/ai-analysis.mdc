@@ -3,37 +3,34 @@ globs: orti-finance-api/ai_analysis_service.py, orti-finance-api/main.py, orti-f
 alwaysApply: true
 ---
 
-# Sequential Thinking MCP Server Integration
+# Integrazione AI con Sequential Thinking
 
-## Core AI Service:
-- **Sequential Thinking MCP Server**: Provides structured, step-by-step problem-solving for financial analysis
-- **ai_analysis_service.py**: Business logic for AI-powered financial analysis using sequential_thinking tool
-- **SequentialThinkingService**: Main service class with methods for variance analysis and budget planning
+## Servizio AI Principale:
+- **Sequential Thinking MCP Server**: Fornisce ragionamento strutturato passo-passo per analisi finanziarie, configurato in `mcp.json`.
+- **ai_analysis_service.py**: Logica business per analisi AI, usa tool `sequential_thinking` per variance e budget.
+- **SequentialThinkingService**: Classe principale con metodi async come `analyze_variance` (indagine scostamenti) e `analyze_budget_planning` (pianificazione budget).
 
-## AI Analysis Endpoints:
-- `POST /api/companies/{company_name}/ai-analysis`: Run sequential thinking analysis
-  - **analysis_type**: `variance_investigation`, `budget_planning`, `seasonal_optimization`, `cash_flow_analysis`
-  - **Parameters**: year, month (optional), variance_threshold (optional)
-  - **Returns**: Structured analysis with step-by-step reasoning process
+## Endpoint AI:
+- `POST /api/companies/{company_name}/ai-analysis`: Esegui analisi sequenziale.
+  - Parametri: `analysis_type` (es. "variance_investigation"), `year`, `month` (opzionale), `variance_threshold` (default 0.15).
+  - Output: Struttura con `analysis_steps` (passi ragionamento), `executive_summary` (raccomandazioni, impatto finanziario).
+- `GET /api/companies/{company_name}/ai-analysis/types`: Lista tipi analisi disponibili (es. variance_investigation, budget_planning).
+- `GET /api/companies/{company_name}/ai-analysis/quick-insights/{year}`: Insights rapidi per dashboard.
 
-- `GET /api/companies/{company_name}/ai-analysis/types`: Available analysis types and descriptions
-- `GET /api/companies/{company_name}/ai-analysis/quick-insights/{year}`: Dashboard-ready AI insights
+## Integrazione Frontend:
+- **AIAnalysisPanel.tsx**: Componente React per interfaccia AI con 3 tabs: Quick Insights, Deep Analysis, Results.
+- **Integrazione**: Pulsante con icona Brain in `ZenFinancialDashboard.tsx`. Usa hook `useFinanceAPI` per chiamate AI.
+- **Gestione Stato**: Real-time updates via subscriptions Supabase post-analisi.
 
-## Frontend AI Integration:
-- **AIAnalysisPanel.tsx**: React component for AI analysis interface
-- **3 Tabs**: Quick Insights, Deep Analysis, Analysis Results  
-- **Integration**: Button with Brain icon in ZenFinancialDashboard.tsx
-- **State Management**: Uses useFinanceAPI hook for AI service calls
+## Processo Sequential Thinking:
+1. **Break Down**: Problemi complessi in passi gestibili.
+2. **Revise**: Raffina pensieri man mano.
+3. **Branch**: Percorsi alternativi di ragionamento.
+4. **Verify**: Genera e testa ipotesi.
+5. **Conclude**: Raccomandazioni actionable con score di confidenza.
 
-## Sequential Thinking Process:
-1. **Break Down**: Complex problems into manageable steps
-2. **Revise**: Refine thoughts as understanding deepens  
-3. **Branch**: Alternative reasoning paths
-4. **Verify**: Generate and test hypotheses
-5. **Conclude**: Actionable recommendations with confidence scores
-
-## Analysis Types:
-- **Variance Investigation**: Root cause analysis of budget vs actual discrepancies
-- **Budget Planning**: Strategic financial planning with seasonal adjustments
-- **Seasonal Optimization**: Peak/shoulder/low season revenue optimization
-- **Cash Flow Analysis**: Liquidity forecasting and working capital management
+## Tipi Analisi:
+- **Variance Investigation**: Analisi root cause di scostamenti budget vs actual, con ipotesi e raccomandazioni.
+- **Budget Planning**: Pianificazione finanziaria strategica con aggiustamenti stagionali e rischi.
+- **Seasonal Optimization**: Ottimizzazione revenue per stagioni peak/low.
+- **Cash Flow Analysis**: Previsione liquidità e gestione capitale.

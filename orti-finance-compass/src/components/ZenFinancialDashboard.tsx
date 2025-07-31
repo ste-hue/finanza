@@ -212,62 +212,18 @@ export const ZenFinancialDashboard: React.FC = () => {
         notes
       });
 
-      // Remove unused variables since we're using direct subcategory approach
-      
-      // 🚀 SIMPLIFIED: Find subcategory ID directly from hierarchical data
-      console.log('🔍 SIMPLIFIED - Looking for category:', editDialog.categoryName);
-      
-      // 🔍 DEBUG: Log hierarchicalCategories structure
-      console.log('🔍 DEBUG hierarchicalCategories:', {
-        total: hierarchicalCategories.length,
-        categories: hierarchicalCategories.map(cat => ({
-          name: cat.name,
-          id: cat.id,
-          subcategories: cat.subcategories?.map(sub => ({ name: sub.name, id: sub.id })) || []
-        })),
-        searching: editDialog.categoryName
-      });
-      
-      let subcategoryId: string | null = null;
-      
-      for (const category of hierarchicalCategories) {
-        if (category.name === editDialog.categoryName) {
-          // Found the main category, get its "Main" subcategory
-          const mainSubcategory = category.subcategories?.find(sub => sub.name === 'Main');
-          if (mainSubcategory) {
-            subcategoryId = mainSubcategory.id;
-            console.log('✅ Found Main subcategory for', category.name, 'ID:', subcategoryId);
-            break;
-          }
-        }
-        
-        // Also check if it's a subcategory name
-        if (category.subcategories) {
-          for (const subcategory of category.subcategories) {
-            if (subcategory.name === editDialog.categoryName) {
-              subcategoryId = subcategory.id;
-              console.log('✅ Found specific subcategory:', subcategory.name, 'ID:', subcategoryId);
-              break;
-            }
-          }
-        }
-        
-        if (subcategoryId) break;
-      }
+      // ✨ No more UUID resolution needed - smart endpoint handles it!
 
-      if (!subcategoryId) {
-        console.error('❌ Subcategory non trovata per:', editDialog.categoryName);
-        throw new Error(`Subcategory per "${editDialog.categoryName}" non trovata`);
-      }
-
-      // 🚀 SIMPLIFIED: Direct API call to /entry endpoint
-      console.log('🔄 Direct API call with subcategoryId:', subcategoryId);
+      // 🚀 NEW: Use smart endpoint that resolves category names automatically
+      console.log('🔄 Smart API call with category name:', editDialog.categoryName);
       
-      const response = await fetch('http://localhost:8000/entry', {
+      const response = await fetch('http://localhost:8000/entry/smart', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          subcategory_id: subcategoryId,
+          company_name: "ORTI",
+          category_name: editDialog.categoryName,
+          subcategory_name: "Main",
           year: editDialog.year,
           month: editDialog.monthIndex,
           value: value,

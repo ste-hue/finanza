@@ -1,10 +1,80 @@
 ---
 alwaysApply: true
 ---
-- Obiettivo: Creare un'applicazione web per la pianificazione e l'analisi finanziaria della società turistica ORTI.
-- Funzionalità Chiave:
-    1. Aggregare entrate, uscite e cash flow per più anni.
-    2. Distinguere nettamente tra dati "Consolidati" (reali) e "Previsionali" (stime).
-    3. Calcolare e visualizzare la "Varianza" (scostamento) tra previsioni e dati reali.
-    4. Fornire dashboard per analisi strategiche (salute aziendale, stagionalità, supporto a decisioni).
-- Business Model: Altamente stagionale, con picco operativo da Aprile a Ottobre.
+Panoramica del Progetto ORTI Finance v3.0
+
+Obiettivo: Fornire un sistema unificato per la pianificazione, gestione e analisi finanziaria della società turistica ORTI, ottimizzato per stabilità, chiarezza e supporto decisionale strategico in un contesto stagionale (picco operativo: aprile-ottobre).
+
+
+Funzionalità Core:
+
+Aggregazione Dati Finanziari: Consolidamento di entrate, uscite e cash flow su base multi-anno, con struttura ottimizzata (entrate a 1 livello, uscite a 2 livelli).
+
+Separazione Dati: Distinzione netta tra:
+
+
+Consolidated (dati reali verificati, is_projection=false, da bilanci/movimenti bancari).
+
+Projections (stime future, is_projection=true, da piani finanziari).
+
+Combined (somma per visione completa).
+
+Analisi Varianza: Calcolo automatico degli scostamenti (Consolidated - Projections) con confronto mensile, percentuali e badge visivi (verde: positivo, rosso: negativo, giallo: neutro).
+
+Dashboard Pro: Interfaccia principale (ZenFinancialDashboard.tsx) con:
+
+Toggle per attivare/disattivare previsioni.
+
+Modalità vista (Combinata, Solo Reali, Solo Previsioni).
+
+Sezioni per scostamenti, pianificazione e amministrazione.
+
+
+Refresh intelligente post-mutazione.
+
+
+Integrazione AI: Analisi avanzate tramite Sequential Thinking MCP Server (ai_analysis_service.py):
+
+
+Variance Investigation: Identificazione cause di scostamenti significativi (>15%) con ipotesi e raccomandazioni.
+
+
+Budget Planning: Proiezioni strategiche con aggiustamenti stagionali e rischi.
+
+Seasonal Optimization: Ottimizzazione revenue per stagioni (peak: giu-ago, shoulder: mar-mag/set-ott, low: nov-feb).
+
+Cash Flow Analysis: Previsione liquidità e gestione capitale.
+
+
+Real-Time Sync: Sincronizzazione automatica tramite Supabase subscriptions (postgres_changes), eliminando polling inefficiente.
+
+
+Business Model:
+
+
+Contesto: ORTI opera nel settore turistico, con forte stagionalità (picco estivo, bassa stagione invernale).
+
+Focus: Ottimizzazione revenue, controllo costi, gestione cash flow e supporto decisioni strategiche (es. pricing, capacity).
+
+Esigenze: Reportistica ufficiale , pianificazione previsionale, analisi scostamenti per migliorare forecast.
+
+
+Benefici Chiave:
+
+Chiarezza: Struttura dati logica (entrate semplificate, uscite organizzate).
+
+Efficienza: Workflow ottimizzato con real-time updates e AI insights.
+
+
+Precisione: Separazione netta reali/stime; analisi scostamenti automatiche.
+
+
+Scalabilità: Architettura ibrida (FastAPI per logica, Supabase direct per sync) pronta per espansioni (es. 2026, nuove metriche).
+
+
+Stato Attuale (31 luglio 2025):
+
+Sistema in produzione (README.md: status production_ready).
+
+
+Dashboard e AI pienamente operativi; test consigliati per dati storici e scostamenti 2025.

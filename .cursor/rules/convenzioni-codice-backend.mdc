@@ -2,8 +2,15 @@
 globs: orti-finance-api/**/*.py
 alwaysApply: false
 ---
-- File Principale: `orti-finance-api/main.py` contiene tutta la logica API e di business.
-- Stile: `snake_case` per variabili e funzioni.
-- Typing: Usare sempre i type hints di Python (es. `def mia_funzione(nome: str) -> bool:`).
-- Modelli API: Usare Pydantic (`BaseModel`) per definire i corpi delle richieste e delle risposte. Questo garantisce la validazione automatica.
-- Lingua: I commenti e le stringhe per l'utente sono in italiano.
+
+# Convenzioni Codice Backend
+
+- **File Principale**: `main.py` per API e routing; `supabase_service.py` per DB; `ai_analysis_service.py` per AI.
+- **Stile**: `snake_case` per variabili/funzioni; async def per metodi I/O-bound (es. DB/AI calls).
+- **Typing**: Sempre type hints (es. `def analyze_variance(self, company_id: str) -> Dict[str, Any]:`).
+- **Modelli**: Pydantic `BaseModel` per request/response (validazione automatica).
+- **AI**: Usa `asyncio` per analisi sequenziali; Enum per tipi (es. `AnalysisType`).
+- **Env**: Load da `.env` via `load_dotenv()`; credenziali in `config.py`.
+- **Errori**: Logga con `logging`; raise exceptions significative.
+- **Lingua**: Commenti e stringhe utente in italiano; codice in inglese.
+- **Dipendenze**: Solo da `requirements.txt`; no install runtime.

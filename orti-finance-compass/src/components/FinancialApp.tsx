@@ -2,11 +2,10 @@ import React, { useState } from 'react';
 import { useFinCalSupabase } from '@/hooks/useFinCalSupabase';
 import { ZenFinancialDashboard } from './ZenFinancialDashboard';
 import RealtimeEntryDemo from './RealtimeEntryDemo';
-import DataManagement from './DataManagement';
 
 export const FinancialApp: React.FC = () => {
-  const { activeCompany, loading, refreshData } = useFinCalSupabase();
-  const [currentView, setCurrentView] = useState<'dashboard' | 'data-management' | 'crud-demo'>('dashboard');
+  const { activeCompany, loading } = useFinCalSupabase();
+  const [showRealtimeDemo, setShowRealtimeDemo] = useState(false);
 
   if (loading) {
     return (
@@ -84,46 +83,26 @@ export const FinancialApp: React.FC = () => {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-8 py-8">
-        {/* Navigation Tabs */}
+        {/* 🚀 Real-time Demo Toggle */}
         <div className="mb-6 flex items-center justify-center">
-          <div className="flex bg-white rounded-lg shadow-sm border p-1">
-            <button
-              onClick={() => setCurrentView('dashboard')}
-              className={`px-6 py-3 rounded-md font-medium transition-all duration-300 ${
-                currentView === 'dashboard'
-                  ? 'bg-blue-600 text-white shadow-lg' 
-                  : 'text-blue-600 hover:bg-blue-50'
-              }`}
-            >
-              📊 Dashboard
-            </button>
-            <button
-              onClick={() => setCurrentView('data-management')}
-              className={`px-6 py-3 rounded-md font-medium transition-all duration-300 ${
-                currentView === 'data-management'
-                  ? 'bg-green-600 text-white shadow-lg' 
-                  : 'text-green-600 hover:bg-green-50'
-              }`}
-            >
-              🗃️ Gestione Dati
-            </button>
-            <button
-              onClick={() => setCurrentView('crud-demo')}
-              className={`px-6 py-3 rounded-md font-medium transition-all duration-300 ${
-                currentView === 'crud-demo'
-                  ? 'bg-purple-600 text-white shadow-lg' 
-                  : 'text-purple-600 hover:bg-purple-50'
-              }`}
-            >
-              ⚡ CRUD Demo
-            </button>
-          </div>
+          <button
+            onClick={() => setShowRealtimeDemo(!showRealtimeDemo)}
+            className={`px-6 py-3 rounded-lg font-medium transition-all duration-300 ${
+              showRealtimeDemo 
+                ? 'bg-blue-600 text-white shadow-lg scale-105' 
+                : 'bg-white text-blue-600 border border-blue-600 hover:bg-blue-50'
+            }`}
+          >
+            {showRealtimeDemo ? '🔍 Dashboard Standard' : '⚡ Real-time CRUD Demo'}
+          </button>
         </div>
 
         {/* Conditional Content */}
-        {currentView === 'dashboard' && <ZenFinancialDashboard />}
-        {currentView === 'data-management' && <DataManagement onDataUpdated={refreshData} />}
-        {currentView === 'crud-demo' && <RealtimeEntryDemo />}
+        {showRealtimeDemo ? (
+          <RealtimeEntryDemo />
+        ) : (
+          <ZenFinancialDashboard />
+        )}
       </div>
     </div>
   );

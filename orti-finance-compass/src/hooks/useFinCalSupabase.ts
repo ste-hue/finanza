@@ -1,39 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { apiService, ApiEntry } from '@/lib/apiService';
-// Local type definitions (avoiding deprecated supabase.ts)
-interface Company {
-  id: string;
-  name: string;
-  description?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-interface Category {
-  id: string;
-  company_id: string;
-  name: string;
-  type_id: 'revenue' | 'expense' | 'balance' | 'financing' | 'calculation';
-  is_total?: boolean;
-  is_calculated?: boolean;
-  calculation_formula?: string;
-  sort_order: number;
-  created_at: string;
-  updated_at: string;
-}
-
-interface Entry {
-  id: string;
-  subcategory_id: string;
-  year: number;
-  month: number;
-  value: number;
-  is_projection?: boolean;
-  notes?: string;
-  created_at: string;
-  updated_at: string;
-}
-import { HierarchicalCategory, ProcessedEntry } from '@/lib/hierarchyMiddleware';
+import { Company, Category, Entry } from '@/lib/supabase';
+import { HierarchyMiddleware, HierarchicalCategory, ProcessedEntry } from '@/lib/hierarchyMiddleware';
 
 // Simplified state management for Supabase integration with 3-level hierarchy
 export interface FinCalSupabaseState {
@@ -136,13 +104,7 @@ export const useFinCalSupabase = () => {
       console.log('🎯 Setting final state...');
       setState(prev => ({
         ...prev,
-        companies: [{
-          id: 'orti-backend', 
-          name: 'ORTI', 
-          description: 'ORTI Company via Backend API',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }],
+        companies: [{id: 'orti-backend', name: 'ORTI', description: 'ORTI Company via Backend API'}],
         hierarchicalCategories,
         entries: allEntries,
         activeCompanyId: 'orti-backend',
@@ -175,10 +137,10 @@ export const useFinCalSupabase = () => {
     return state.companies.find(c => c.id === state.activeCompanyId) || null;
   }, [state.companies, state.activeCompanyId]);
 
-  // Update entry - SIMPLIFIED using direct Supabase
+  // Update entry - FIXED for 3-level hierarchy
   const updateEntry = useCallback(async (
     categoryId: string, 
-    subcategoryName: string | null, 
+    subcategoryName: string | null, // NEW: Can specify subcategory name
     monthYear: string, 
     value: number, 
     isProjection: boolean = false, 
@@ -187,28 +149,18 @@ export const useFinCalSupabase = () => {
     try {
       const [month, year] = monthYear.split('-').map(Number);
       
-      console.log('🔄 DIRECT SUPABASE - Updating entry:', { categoryId, subcategoryName, year, month, value });
+      console.log('🔄 Updating entry:', { categoryId, subcategoryName, year, month, value });
       
-      // 🚀 SIMPLIFIED: Use direct API call instead of complex middleware
-      const response = await fetch('http://localhost:8000/entry', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          subcategory_id: categoryId, // Use categoryId directly as subcategory_id
-          year,
-          month,
-          value,
-          is_projection: isProjection,
-          notes: notes || `Updated via dashboard - ${new Date().toISOString()}`
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      console.log('✅ Direct API response:', result);
+      // Use HierarchyMiddleware to handle the complexity
+      await HierarchyMiddleware.upsertEntry(
+        categoryId,
+        subcategoryName,
+        year,
+        month,
+        value,
+        isProjection,
+        notes
+      );
       
       // Refresh data after update
       if (activeCompany) {
@@ -351,11 +303,6 @@ export const useFinCalSupabase = () => {
     
     // Existing methods
     initializeORTI,
-    refreshData: useCallback(() => {
-      if (state.activeCompanyId) {
-        initializeORTI();
-      }
-    }, [state.activeCompanyId, initializeORTI]),
     
     // State management
     setCurrentYear: (year: number) => {

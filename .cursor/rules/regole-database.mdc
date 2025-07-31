@@ -1,5 +1,5 @@
 ---
-globs: orti-finance-api/**/*.py, **/*.sql
+globs: orti-finance-api/**/*.py
 alwaysApply: false
 ---
 La struttura del DB è gerarchica:

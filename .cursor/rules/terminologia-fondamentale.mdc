@@ -1,22 +1,133 @@
 ---
 alwaysApply: true
 ---
-Quando si parla di dati finanziari, usare sempre questa terminologia:
+Terminologia Fondamentale (ORTI Finance v3.0)
 
-- Consolidato (Actual):
-    - Rappresenta dati finanziari REALI e VERIFICATI.
-    - Proviene da fonti ufficiali (bilanci, movimenti bancari).
-    - Nel database, corrisponde a un record nella tabella `entries` con `is_projection = false`.
 
-- Previsionale (Forecast/Projection):
-    - Rappresenta STIME o PROIEZIONI future.
-    - Proviene da piani operativi, come il file Excel "Piano Finanziario".
-    - Nel database, corrisponde a un record nella tabella `entries` con `is_projection = true`.
+Consolidato (Actual):
 
-- Combinato (Combined):
-    - La SOMMA di dati `Consolidati` e `Previsionali` per un dato periodo (es. un anno intero).
-    - Usato per la pianificazione e per avere una visione completa dell'anno in corso.
 
-- Varianza (Variance):
-    - La DIFFERENZA matematica tra il valore `Previsionale` e il valore `Consolidato` per una specifica voce in un dato mese/periodo.
-    - Varianza = Consolidato - Previsionale.
+Dati finanziari reali e verificati, provenienti da fonti ufficiali (es. bilanci, movimenti bancari).
+
+Nel database: Record in entries con is_projection=false.
+
+
+Usato per: Reportistica ufficiale (es. INTUR), analisi storica.
+
+Esempio: Entrate Hotel 2025, €1.454.947 (reali).
+
+
+Previsionale (Forecast/Projection):
+
+
+Stime o proiezioni future, basate su piani operativi (es. Excel "Piano Finanziario").
+
+Nel database: Record in entries con is_projection=true.
+
+
+
+Usato per: Pianificazione strategica, budget.
+
+
+
+Esempio: Entrate Hotel 2025, €2.972.205 (previsto).
+
+
+
+Combinato (Combined):
+
+
+Somma di dati Consolidati e Previsionali per un periodo (es. anno intero).
+
+
+Usato per: Visione completa in dashboard (es. ZenFinancialDashboard.tsx).
+
+
+Esempio: Entrate Totali 2025, €4.427.152 (reali + previsti).
+
+
+Varianza (Variance/Scostamento):
+
+
+Differenza matematica: Consolidato - Previsionale per una voce in un mese/periodo.
+
+
+Visualizzata con badge in UI:
+
+Verde: Scostamento positivo (Consolidato > Previsionale).
+
+
+
+Rosso: Scostamento negativo (Consolidato < Previsionale).
+
+
+Giallo: Scostamento neutro (<15% o €10k).
+
+
+Usato in: Analisi scostamenti (VarianceAnalysis.tsx, endpoint /variance).
+
+
+
+Esempio: Varianza Entrate Hotel, -€1.517.258 (-51%).
+
+
+
+Insights Automatici:
+
+
+Analisi generate via AI (Sequential Thinking in ai_analysis_service.py).
+
+
+
+Struttura: Passi sequenziali (es. identificazione problema, ipotesi cause, raccomandazioni).
+
+
+
+Usato in: AIAnalysisPanel.tsx per decisioni strategiche (es. variance investigation, budget planning).
+
+
+
+Esempio: "Varianza Entrate Hotel: impatto €1.5M, causa ipotetica: cancellazioni elevate."
+
+
+Real-Time Sync:
+
+Aggiornamento automatico dati via Supabase subscriptions (postgres_changes).
+
+Elimina polling; usato in: useFinancialDataRealtime.ts.
+
+Esempio: Modifica in entries → refresh UI istantaneo.
+
+
+Stagionalità:
+
+Contesto operativo di ORTI (turismo):
+
+
+Peak: Giugno-Agosto (alta attività, focus revenue).
+
+Shoulder: Marzo-Maggio, Settembre-Ottobre (attività media, ottimizzazione).
+
+
+Low: Novembre-Febbraio (bassa attività, pianificazione).
+
+
+
+Usato in: Analisi AI e budget (es. analyze_seasonal_patterns).
+
+Best Practices
+
+
+Coerenza: Usa termini esatti in codice, commenti, UI e documentazione (es. "Consolidato", non "reale").
+
+
+
+Chiarezza: Specifica is_projection in query e UI per distinguere dati.
+
+
+Esempio Uso:
+
+// In useOptimizedFinanceAPI.ts
+const { consolidated, projections, combined } = useOptimizedFinanceAPI('ORTI', 2025);
+// Mostra in UI
+<Card>Entrate Totali: {combined.total} (Reali: {consolidated.total}, Prev: {projections.total})</Card>
