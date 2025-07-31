@@ -1,0 +1,44 @@
+---
+globs: orti-finance-compass/src/components/ZenFinancialDashboard.tsx, orti-finance-compass/src/hooks/useFinCalSupabase.ts, orti-finance-compass/src/lib/hierarchyMiddleware.ts
+alwaysApply: true  
+---
+
+# CRUD Operations - Fixed Architecture
+
+## Critical UUID vs Slug Distinction:
+- **SEMPRE usare UUID** per subcategory_id nelle chiamate API al backend
+- **MAI usare slugs** (es. "entrate-hotel") come identificatori per il database
+- **Frontend**: Deve risolvere categoryName -> subcategory UUID prima delle chiamate API
+
+## Simplified CRUD Flow:
+1. **Frontend**: handleSaveEntry in ZenFinancialDashboard.tsx
+2. **UUID Resolution**: Trova subcategory_id (UUID) da hierarchicalCategories state
+3. **Direct API Call**: PUT request diretto a `/entry` endpoint con parametri corretti
+4. **Immediate Refresh**: `await loadData()` dopo successo per aggiornare UI
+
+## Entry Update Parameters:
+```typescript
+{
+  subcategory_id: string,  // UUID, NOT slug!
+  year: number,
+  month: number, 
+  value: number,
+  is_projection: boolean,
+  notes?: string
+}
+```
+
+## Default Subcategories:
+- Ogni category DEVE avere almeno una subcategory "Main"
+- **Auto-creation**: Sistema crea "Main" subcategory se mancante
+- **Sort Order**: Default subcategory ha sort_order = 0 o 1
+
+## Error Handling:
+- **"invalid input syntax for type uuid"** = slug usato invece di UUID
+- **"Failed to create default subcategory: undefined"** = subcategory_id non risolto correttamente
+- **Fix**: Sempre risolvere UUID prima delle chiamate API
+
+## HierarchyMiddleware:
+- **Avoid for CRUD**: Logica complessa può causare bug UUID/slug
+- **Use for Display**: OK per processare dati hierarchical per visualizzazione
+- **Direct API Preferred**: Per aggiornamenti, chiamata diretta API più affidabile

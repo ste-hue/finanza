@@ -1,0 +1,39 @@
+---
+globs: orti-finance-api/ai_analysis_service.py, orti-finance-api/main.py, orti-finance-compass/src/components/AIAnalysisPanel.tsx
+alwaysApply: true
+---
+
+# Sequential Thinking MCP Server Integration
+
+## Core AI Service:
+- **Sequential Thinking MCP Server**: Provides structured, step-by-step problem-solving for financial analysis
+- **ai_analysis_service.py**: Business logic for AI-powered financial analysis using sequential_thinking tool
+- **SequentialThinkingService**: Main service class with methods for variance analysis and budget planning
+
+## AI Analysis Endpoints:
+- `POST /api/companies/{company_name}/ai-analysis`: Run sequential thinking analysis
+  - **analysis_type**: `variance_investigation`, `budget_planning`, `seasonal_optimization`, `cash_flow_analysis`
+  - **Parameters**: year, month (optional), variance_threshold (optional)
+  - **Returns**: Structured analysis with step-by-step reasoning process
+
+- `GET /api/companies/{company_name}/ai-analysis/types`: Available analysis types and descriptions
+- `GET /api/companies/{company_name}/ai-analysis/quick-insights/{year}`: Dashboard-ready AI insights
+
+## Frontend AI Integration:
+- **AIAnalysisPanel.tsx**: React component for AI analysis interface
+- **3 Tabs**: Quick Insights, Deep Analysis, Analysis Results  
+- **Integration**: Button with Brain icon in ZenFinancialDashboard.tsx
+- **State Management**: Uses useFinanceAPI hook for AI service calls
+
+## Sequential Thinking Process:
+1. **Break Down**: Complex problems into manageable steps
+2. **Revise**: Refine thoughts as understanding deepens  
+3. **Branch**: Alternative reasoning paths
+4. **Verify**: Generate and test hypotheses
+5. **Conclude**: Actionable recommendations with confidence scores
+
+## Analysis Types:
+- **Variance Investigation**: Root cause analysis of budget vs actual discrepancies
+- **Budget Planning**: Strategic financial planning with seasonal adjustments
+- **Seasonal Optimization**: Peak/shoulder/low season revenue optimization
+- **Cash Flow Analysis**: Liquidity forecasting and working capital management

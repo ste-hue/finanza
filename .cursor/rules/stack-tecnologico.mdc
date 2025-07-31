@@ -1,8 +1,34 @@
 ---
 alwaysApply: true
 ---
-- Backend: Python 3.11 con FastAPI.
-- Frontend: React con TypeScript e Vite.
-- Database: Supabase (PostgreSQL).
-- Servizi API DB: La logica di interazione con Supabase è incapsulata in orti-finance-api/supabase_service.py.
-- Deployment: Docker e docker-compose.yml.
+
+# ORTI Finance System v3.0 - Tech Stack
+
+## Core Architecture:
+- **Backend**: Python 3.11 con FastAPI
+- **Frontend**: React con TypeScript e Vite + Tailwind CSS
+- **Database**: Supabase (PostgreSQL) con real-time capabilities
+- **Servizi API DB**: La logica di interazione con Supabase è incapsulata in orti-finance-api/supabase_service.py
+- **Deployment**: Docker e docker-compose.yml
+- **Management**: Unified `./orti` script per lifecycle management
+
+## AI Integration:
+- **Sequential Thinking MCP Server**: @modelcontextprotocol/server-sequential-thinking
+- **AI Analysis Service**: ai_analysis_service.py per financial analysis
+- **MCP Configuration**: ~/.cursor/mcp.json con Supabase + Sequential Thinking servers
+
+## Frontend Components:
+- **ZenFinancialDashboard**: Main dashboard with Japanese zen design
+- **AIAnalysisPanel**: AI-powered analysis interface  
+- **VarianceAnalysis**: Budget vs Actual variance investigation
+- **DataManagement**: CRUD operations with UUID-based architecture
+
+## Key Design Principles:
+- **Monorepo**: Clear frontend/backend separation
+- **UUID-based**: All database references use UUIDs, never slugs
+- **Real-time**: Supabase subscriptions for live data updates
+- **Sequential Thinking**: AI reasoning process for complex financial analysis
+- **Zen UX**: Minimalist, focused interface design
+
+## Data Flow:
+UI React → API FastAPI → SupabaseService → Database Supabase → AI Analysis (Optional)
