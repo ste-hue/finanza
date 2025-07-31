@@ -1,0 +1,224 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* FinCal Zen Design System - 財務禅 */
+@layer base {
+  :root {
+    /* Zen Color Palette - Ispirata alla natura giapponese */
+    --background: 0 0% 98%;
+    --foreground: 210 10% 23%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 210 10% 23%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 10% 23%;
+
+    /* Blu nebbia montagna */
+    --primary: 210 100% 89%;
+    --primary-foreground: 210 30% 15%;
+
+    /* Grigio pietra zen */
+    --secondary: 210 8% 95%;
+    --secondary-foreground: 210 10% 23%;
+
+    /* Grigio silenzioso */
+    --muted: 210 8% 96%;
+    --muted-foreground: 210 8% 45%;
+
+    /* Verde bambù */
+    --accent: 155 25% 85%;
+    --accent-foreground: 155 30% 20%;
+
+    /* Rosso sake delicato */
+    --destructive: 0 50% 85%;
+    --destructive-foreground: 0 30% 25%;
+
+    /* Giallo ginkgo soft */
+    --warning: 45 70% 88%;
+    --warning-foreground: 45 30% 25%;
+
+    /* Verde te matcha */
+    --success: 155 25% 85%;
+    --success-foreground: 155 30% 20%;
+
+    --border: 210 8% 92%;
+    --input: 210 8% 94%;
+    --ring: 210 100% 89%;
+
+    --radius: 0.75rem;
+
+    /* FinCal Zen Colors */
+    --revenue: 155 25% 75%;
+    --expense: 0 50% 75%;
+    --projection: 45 70% 78%;
+    --actual: 155 25% 70%;
+    --diff-positive: 155 30% 65%;
+    --diff-negative: 0 50% 70%;
+
+    /* Chart colors - Palette naturale */
+    --chart-1: 210 100% 85%;
+    --chart-2: 155 25% 70%;
+    --chart-3: 45 70% 75%;
+    --chart-4: 280 30% 80%;
+    --chart-5: 25 60% 80%;
+
+    /* Gradients zen */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
+    --gradient-success: linear-gradient(135deg, hsl(var(--success)), hsl(var(--accent)));
+    --gradient-calm: linear-gradient(180deg, hsl(var(--background)), hsl(var(--muted)));
+    
+    /* Shadows zen */
+    --shadow-zen: 0 4px 20px -8px hsla(210, 8%, 45%, 0.15);
+    --shadow-soft: 0 2px 10px -4px hsla(210, 8%, 45%, 0.1);
+  }
+
+  .dark {
+    --background: 210 15% 8%;
+    --foreground: 210 8% 92%;
+
+    --card: 210 15% 10%;
+    --card-foreground: 210 8% 92%;
+
+    --popover: 210 15% 10%;
+    --popover-foreground: 210 8% 92%;
+
+    --primary: 210 60% 25%;
+    --primary-foreground: 210 8% 92%;
+
+    --secondary: 210 12% 15%;
+    --secondary-foreground: 210 8% 92%;
+
+    --muted: 210 12% 12%;
+    --muted-foreground: 210 8% 55%;
+
+    --accent: 155 15% 20%;
+    --accent-foreground: 210 8% 92%;
+
+    --destructive: 0 30% 30%;
+    --destructive-foreground: 210 8% 92%;
+
+    --warning: 45 40% 35%;
+    --warning-foreground: 210 8% 92%;
+
+    --success: 155 15% 25%;
+    --success-foreground: 210 8% 92%;
+
+    --border: 210 12% 18%;
+    --input: 210 12% 18%;
+    --ring: 210 60% 25%;
+
+    --revenue: 155 20% 45%;
+    --expense: 0 40% 50%;
+    --projection: 45 50% 55%;
+    --actual: 155 20% 40%;
+    --diff-positive: 155 25% 50%;
+    --diff-negative: 0 40% 55%;
+
+    --chart-1: 210 60% 35%;
+    --chart-2: 155 20% 40%;
+    --chart-3: 45 50% 45%;
+    --chart-4: 280 20% 50%;
+    --chart-5: 25 40% 50%;
+
+    --shadow-zen: 0 4px 20px -8px hsla(210, 15%, 0%, 0.3);
+    --shadow-soft: 0 2px 10px -4px hsla(210, 15%, 0%, 0.2);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-zen;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    line-height: 1.6;
+    letter-spacing: -0.01em;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-zen-jp;
+    letter-spacing: -0.02em;
+  }
+}
+
+@layer components {
+  .zen-card {
+    @apply bg-card border border-border rounded-xl shadow-zen;
+  }
+
+  .zen-button {
+    @apply transition-all duration-300 ease-in-out;
+  }
+
+  .zen-input {
+    @apply transition-all duration-200 ease-in-out focus:ring-2 focus:ring-primary/20;
+  }
+
+  .zen-fade-in {
+    animation: zen-fade-in 0.6s ease-out;
+  }
+
+  .zen-slide-up {
+    animation: zen-slide-up 0.4s ease-out;
+  }
+}
+
+@keyframes zen-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes zen-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes zen-breathe {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+}
+
+.animate-zen-pulse {
+  animation: zen-pulse 2s ease-in-out infinite;
+}
+
+@keyframes zen-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
