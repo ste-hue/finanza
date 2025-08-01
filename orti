@@ -1,63 +1,39 @@
 #!/bin/bash
 
-# 🎯 ORTI Finance - Comando Ultra-Semplice
-# Uso: ./orti [start|stop|test|status]
+# 🎯 ORTI Finance - Unified Command (MCP Supabase Direct)
+# Usage: ./orti [start|stop|status]
 
 case "${1:-help}" in
   "start")
-    echo "🚀 Avvio ORTI Finance..."
-    ./start-orti.sh
+    echo "🚀 Starting ORTI Finance..."
+    ./orti-start.sh
     ;;
   "stop")
-    echo "🛑 Stop ORTI Finance..."
-    ./stop-orti.sh
-    ;;
-  "test")
-    echo "🧪 Test Sistema..."
-    ./test_crud_complete.sh
+    echo "🛑 Stopping ORTI Finance..."
+    pkill -f "vite\|node.*5173" 2>/dev/null || true
+    echo "✅ All processes stopped"
     ;;
   "status")
-    echo "📊 Status Sistema..."
+    echo "📊 ORTI Finance Status..."
     echo ""
-    echo "🔧 Backend (8000):"
-    curl -s "http://localhost:8000" | jq '.message' 2>/dev/null || echo "❌ Non attivo"
-    echo ""
-    echo "🎨 Frontend (8080):"
-    curl -s "http://localhost:8080" | head -1 | grep -q "DOCTYPE" && echo "✅ Attivo" || echo "❌ Non attivo"
-    echo ""
-    echo "📍 URLs:"
-    echo "   Frontend: http://localhost:8080"
-    echo "   Backend:  http://localhost:8000"
-    ;;
-  "import")
-    if [ -z "$2" ]; then
-      echo "🔄 ORTI Finance - Import Dati"
-      echo ""
-      echo "💡 USAGE:"
-      echo "  ./orti import miei_dati.json"
-      echo ""
-      echo "📋 FILE ESEMPIO:"
-      echo "  cp miei_dati_esempio.json miei_dati.json"
-      echo "  # Modifica miei_dati.json con i tuoi dati"
-      echo "  ./orti import miei_dati.json"
-      echo ""
-      echo "🎨 COLORI AUTOMATICI:"
-      echo "  🟢 Verde = Dati Consolidati (is_projection: false)"
-      echo "  🟠 Arancione = Dati Previsionali (is_projection: true)"
-      echo ""
+    if curl -s "http://localhost:5173" | grep -q "DOCTYPE"; then
+      echo "✅ Frontend: Active on http://localhost:5173"
     else
-      ./reset-and-import.sh "$2"
+      echo "❌ Frontend: Not running"
     fi
+    echo ""
+    echo "🔧 Architecture: Frontend → MCP Supabase → Database"
+    echo "📍 Dashboard: http://localhost:5173"
     ;;
   *)
-    echo "🎯 ORTI Finance - Comandi:"
+    echo "🎯 ORTI Finance - MCP Direct Architecture"
     echo ""
-    echo "  ./orti start   🚀 Avvia sistema"
-    echo "  ./orti stop    🛑 Ferma sistema"  
-    echo "  ./orti test    🧪 Test completo"
-    echo "  ./orti status  📊 Controlla stato"
-    echo "  ./orti import  🔄 Reset + Import JSON"
+    echo "  ./orti start   🚀 Start dashboard"
+    echo "  ./orti stop    🛑 Stop all processes"  
+    echo "  ./orti status  📊 Check status"
     echo ""
-    echo "📍 Quick access: http://localhost:8080"
+    echo "📍 Access: http://localhost:5173"
+    echo "🏗️ Architecture: React → Supabase Direct → Database"
+    echo ""
     ;;
 esac

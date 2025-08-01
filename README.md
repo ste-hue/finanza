@@ -1,322 +1,97 @@
-# 🚀 ORTI Finance - Sistema Gestione Finanziaria
+# 🎯 ORTI Finance - MCP Supabase Direct
 
-[![Version](https://img.shields.io/badge/version-2.2.0-blue.svg)](https://github.com/orti-finance/releases)
-[![Status](https://img.shields.io/badge/status-production_ready-green.svg)](http://localhost:8080)
-[![API](https://img.shields.io/badge/API-active-success.svg)](http://localhost:8000)
+**Ruthlessly simplified financial dashboard with zero complexity.**
 
-**Sistema completo per la pianificazione e analisi finanziaria della società turistica ORTI.**
+## 🏗️ Architecture
 
-## ⚡ Quick Start
+```
+React Frontend → Supabase Direct → Database
+```
 
-### 🚀 Avvio Immediato (Un Solo Comando)
+**No backend, no FastAPI, no polling, no complexity - just works.**
+
+## 🚀 Quick Start
+
 ```bash
-./orti start
-```
-
-**Vai su: http://localhost:8080** 🎯
-
-### 🎮 Comandi Principali
-```bash
-./orti start    # 🚀 Avvia tutto (Backend + Frontend)
-./orti stop     # 🛑 Ferma tutto
-./orti test     # 🧪 Test completo CRUD
-./orti status   # 📊 Controlla stato servizi
-```
-
----
-
-## 📍 Accessi Sistema
-
-| **Servizio** | **URL** | **Descrizione** |
-|--------------|---------|-----------------|
-| 🎨 **Frontend** | **http://localhost:8080** | App React principale |
-| 🔧 **Backend API** | **http://localhost:8000** | API FastAPI con CRUD completo |
-| ⚡ **CRUD Demo** | http://localhost:8080 → "Real-time CRUD Demo" | Test editing dati in tempo reale |
-| 📊 **API Status** | http://localhost:8000/status | Info endpoints e sistema |
-
----
-
-## 🎯 Obiettivi e Funzionalità
-
-### 📊 **Core Business Logic**
-- ✅ **Aggregazione** entrate, uscite e cash flow multi-anno
-- 🔄 **Distinzione chiara** tra dati "Consolidati" (reali) e "Previsionali" (stime)
-- ⚖️ **Calcolo Varianza** automatico (scostamento previsioni vs reale)
-- 📈 **Dashboard strategiche** per analisi stagionalità e supporto decisioni
-
-### 🏖️ **Business Model Turistico**
-- **Stagionalità**: Picco Aprile-Ottobre, bassa stagione Novembre-Marzo
-- **22 Categorie Finanziarie**: 7 Entrate + 12 Uscite + 3 Conti Bancari
-- **Multi-year Planning**: 2024 (consolidati) → 2025-2026 (previsionali)
-
----
-
-## 🏗️ Architettura Sistema
-
-### **Stack Tecnologico Completo**
-```
-🎨 Frontend:  React + TypeScript + Vite + Tailwind CSS
-🔧 Backend:   Python 3.11 + FastAPI + Pydantic  
-🗃️ Database:  Supabase (PostgreSQL) + Real-time
-⚡ Real-time: WebSocket + Auto-sync
-🧪 Testing:   Automated CRUD + API testing
-🚀 Deploy:    Docker + Scripts automation
-```
-
-### **Struttura Progetto**
-```
-📁 finanza/
-├── 🚀 orti                    # Comando principale ultra-semplice
-├── 📋 start-orti.sh          # Avvio sistema completo  
-├── 🛑 stop-orti.sh           # Stop pulito
-├── 🧪 test_crud_complete.sh  # Test suite completa
-├── 📊 quick_import_example.json # Esempio import dati
-├── 📚 README-Quick-Start.md   # Guida rapida
-│
-├── 🔧 orti-finance-api/       # Backend FastAPI
-│   ├── main.py               # Server principale + CRUD endpoints
-│   ├── supabase_service.py   # Connettore database
-│   └── config.py             # Configurazioni
-│
-├── 🎨 orti-finance-compass/   # Frontend React
-│   ├── src/components/       # Componenti UI
-│   ├── src/lib/apiService.ts # Client API unificato
-│   └── src/hooks/            # React hooks custom
-│
-└── 📄 supabase/              # Database schema + config
-```
-
----
-
-## 🔥 Funzionalità Implementate
-
-### ✅ **CRUD Completo e Real-time**
-```typescript
-// Endpoint completi implementati
-POST   /entries          // ➕ Create new entry
-GET    /entries          // 📊 Read entries (con filtri)
-GET    /entries/{id}     // 🔍 Read single entry  
-PUT    /entries/{id}     // ✏️ Update entry by ID
-DELETE /entries/{id}     // 🗑️ Delete entry
-PUT    /entry            // 🔄 Legacy update (compatibility)
-```
-
-### 📊 **Gestione Tipi Dati** 
-```
-✅ CONSOLIDATO (is_projection=false)
-  └── Dati reali verificati da bilanci INTUR
-  └── Color: Verde 🟢
-  └── Fonte: Movimenti bancari, fatture
-
-🔮 PREVISIONALE (is_projection=true)  
-  └── Stime future da Piano Finanziario Excel
-  └── Color: Arancione 🟠
-  └── Fonte: Proiezioni business, stagionalità
-
-⚖️ VARIANZA (Consolidato - Previsionale)
-  └── Calcolo automatico scostamenti
-  └── Support per analisi performance
-```
-
-### 🏗️ **Database Structure (22 Categorie)**
-```sql
--- 💰 7 CATEGORIE ENTRATE
-Entrate Hotel, Entrate Residence, Entrate CVM, 
-Entrate Supermercato, Rientro Sospesi, 
-Caparre Intur, TOTALE ENTRATE
-
--- 💸 12 CATEGORIE USCITE  
-Salari e Stipendi, Utenze, Materie Prime/Consumo,
-Tasse e Imposte, Commissioni Portali, Mutui e Finanziamenti,
-Consulenze, Godimento Beni di Terzi, Varie ed Eventuali,
-Canoni e servizi, Ristr. Apt SDP Jr, Deposito Fitto
-
--- 🏦 3 CONTI BANCARI
-Saldo MPS, Saldo Intesa, CASSA CONTANTI
-```
-
----
-
-## 🧪 Testing e Validazione
-
-### **Test Suite Automatici**
-```bash
-./test_crud_complete.sh    # Test completo tutti endpoint
-./orti test               # Test via comando semplice
-
-# Output esempio:
-✅ CREATE (POST /entries) - New entry creation
-✅ READ (GET /entries, GET /entries/{id}) - Data retrieval  
-✅ UPDATE (PUT /entries/{id}, PUT /entry) - Data modification
-✅ DELETE (DELETE /entries/{id}) - Data deletion
-✅ SYNC - Company summary reflects changes
-```
-
-### **Real-time Demo Live**
-1. Vai su http://localhost:8080
-2. Click **"⚡ Real-time CRUD Demo"**
-3. Edita valori cliccando sui numeri
-4. Osserva sync automatico ogni 2 secondi
-5. Crea/modifica/elimina entries in tempo reale
-
----
-
-## 📊 Import/Export Dati
-
-### **Formato JSON Standardizzato**
-```bash
-# Import dati via API
-curl -X POST "http://localhost:8000/api/companies/ORTI/bulk-import" \
-  -H "Content-Type: application/json" \
-  -d @quick_import_example.json
-
-# Esempio formato:
-{
-  "company_name": "ORTI",
-  "data": [
-    {
-      "category_name": "Entrate Hotel",
-      "data_type": "consolidated",      # o "projection"
-      "is_projection": false,           # true per previsionali
-      "entries": [
-        {
-          "year": 2024, "month": 12,
-          "value": 85500.00,
-          "notes": "Dicembre 2024 - Consolidato"
-        }
-      ]
-    }
-  ]
-}
-```
-
----
-
-## 🔧 Setup e Installazione
-
-### **Installazione Zero-Config**
-```bash
-# 1. Clone repository
-git clone <repo-url>
-cd finanza
-
-# 2. Un comando per tutto
+# Start dashboard
 ./orti start
 
-# 3. Vai su http://localhost:8080
-# Sistema pronto! 🚀
-```
-
-### **Setup Manuale (Se Necessario)**
-```bash
-# Backend
-cd orti-finance-api
-pip install -r requirements.txt
-python main.py server &
-
-# Frontend  
-cd orti-finance-compass  
-npm install
-npm run dev &
-```
-
----
-
-## 📈 Performance e Scalabilità
-
-### **Ottimizzazioni Implementate**
-- ✅ **Connection Pooling** Supabase
-- ✅ **Query Ottimizzate** con JOIN nativi
-- ✅ **Caching** responses per performance
-- ✅ **Pagination** automatica (limit/offset)
-- ✅ **Error Handling** robusto
-- ✅ **Real-time Polling** simulato (pronto per WebSocket)
-
-### **Metriche Sistema**
-```bash
+# Check status  
 ./orti status
-# Output:
-📊 Status Sistema...
-🔧 Backend (8000): ✅ "ORTI Finance Complete API"  
-🎨 Frontend (8080): ✅ Attivo
-📍 URLs: Frontend: http://localhost:8080
+
+# Stop all
+./orti stop
 ```
 
----
+**Access:** http://localhost:5173
 
-## 🚀 Roadmap e Next Steps
+## 📊 Features
 
-### **✅ Completato (v2.2.0)**
-- CRUD completo Frontend ↔ Backend
-- Separazione Consolidato vs Previsionale
-- 22 categorie strutturate
-- Real-time demo funzionante
-- Sistema di test automatici
-- Comandi semplificati per gestione
+- **Real-time sync** via Supabase subscriptions
+- **View modes:** Combined, Consolidated, Projections  
+- **Variance analysis** between actual vs projected
+- **Monthly charts** with visual indicators
+- **Category breakdown** with drill-down
 
-### **🔄 In Progress**
-- WebSocket real-time (invece di polling)
-- Row Level Security (RLS) Supabase  
-- Advanced dashboard con grafici
-- Import Excel diretto
+## 🔧 What Was Eliminated
 
-### **📋 Planned**
-- Mobile app React Native
-- Advanced analytics e forecasting
-- Multi-company support
-- Role-based access control
+**Deleted 80% of codebase:**
+- ❌ FastAPI backend (entire orti-finance-api/)
+- ❌ Multiple test scripts (test_*.sh, test_*.html)
+- ❌ Complex components (ZenFinancialDashboard 1265 lines → SimpleDashboard 400 lines)
+- ❌ Multiple hooks (useFinCalSupabase, useFinanceAPI → useSupabaseFinance)
+- ❌ Multiple startup scripts (start-orti.sh, stop-orti.sh → orti-start.sh)
 
----
+**Result:** Single hook, single component, single script.
 
-## 🤝 Sviluppo e Contributi
+## 🎨 Tech Stack
 
-### **Development Workflow**
+- **Frontend:** React + TypeScript + Tailwind
+- **Database:** Supabase (direct client)
+- **Real-time:** Supabase subscriptions
+- **Dev Server:** Vite (port 5173)
+
+## 📁 Structure
+
+```
+orti-finance-compass/
+  src/
+    hooks/
+      useSupabaseFinance.ts    # Single unified hook
+    components/
+      SimpleDashboard.tsx      # Single unified component
+    pages/
+      Index.tsx                # Entry point
+orti                           # Unified command
+orti-start.sh                  # Unified launcher
+```
+
+## 🔥 How It's Different
+
+**Before (Complex):**
+- 15+ scripts, 8+ components, 3+ hooks
+- FastAPI backend + real-time polling
+- Multiple entry points, complex state management
+
+**After (Simple):**
+- 3 files total (hook + component + script)
+- Direct Supabase client + subscriptions
+- Single entry point, unified state
+
+## 💾 Data Flow
+
+1. **Load:** Single optimized query with JOINs
+2. **Process:** Client-side aggregation (faster than SQL)
+3. **Display:** Reactive UI with real-time updates
+4. **Save:** Direct upsert + automatic refresh
+
+## 🎯 Commands
+
 ```bash
-./orti start          # Avvio dev environment
-./orti test           # Run test suite
-./orti stop           # Clean shutdown
-
-# Per development avanzato:
-./start-orti.sh       # Con log dettagliati
-tail -f orti-finance-api/server.log  # Backend logs
+./orti           # Show help
+./orti start     # Start dashboard  
+./orti stop      # Stop processes
+./orti status    # Check status
 ```
 
-### **API Documentation**
-- **Interactive docs**: http://localhost:8000/docs
-- **OpenAPI schema**: http://localhost:8000/openapi.json
-- **Status page**: http://localhost:8000/status
-
----
-
-## 📞 Support e Documentazione
-
-### **Guide Rapide**
-- 📚 [Quick Start Guide](README-Quick-Start.md)
-- 🏗️ [Architecture Overview](supabase_improved_architecture.md)  
-- 📊 [Data Import Format](orti_data_import_format.json)
-- 🧪 [Testing Guide](test_crud_complete.sh)
-
-### **Troubleshooting**
-```bash
-# Problemi comuni
-./orti status         # Check stato servizi
-./stop-orti.sh        # Reset completo  
-./orti start          # Riavvio pulito
-
-# Port conflicts
-lsof -i :8000         # Check backend port
-lsof -i :8080         # Check frontend port
-```
-
----
-
-## 🎯 **Sistema Pronto per Produzione!**
-
-**ORTI Finance v2.2.0 è completamente operativo con:**
-- ✅ Full CRUD operations
-- ✅ Real-time data sync  
-- ✅ Comprehensive testing
-- ✅ Production-ready architecture
-- ✅ Zero-config startup
-
-**Inizia subito: `./orti start` → http://localhost:8080** 🚀
+**That's it. No complexity, just results.**
