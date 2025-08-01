@@ -43,6 +43,7 @@ import {
   useSortable,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { createClient } from '@supabase/supabase-js'
 
 // 🎯 DRAGGABLE CATEGORY ROW COMPONENT
 const DraggableCategoryRow: React.FC<{
@@ -53,6 +54,8 @@ const DraggableCategoryRow: React.FC<{
   editingCell: string | null
   editValue: string
   expandedCategories: { [key: string]: boolean }
+  darkMode: boolean
+  zenMode: boolean
   onCellClick: (categoryName: string, month: number) => void
   onCellSave: () => void
   onToggleDetails: (categoryName: string) => void
@@ -63,11 +66,14 @@ const DraggableCategoryRow: React.FC<{
   setEditingCell: (cellId: string | null) => void
 }> = ({
   categoryName,
+  index,
   categoryType,
   months,
   editingCell,
   editValue,
   expandedCategories,
+  darkMode,
+  zenMode,
   onCellClick,
   onCellSave,
   onToggleDetails,
@@ -92,30 +98,50 @@ const DraggableCategoryRow: React.FC<{
     opacity: isDragging ? 0.5 : 1,
   }
 
-  const colorClass = categoryType === 'revenue' ? 'text-green-700' : 'text-red-700'
-  const bgColorClass = categoryType === 'revenue' ? 'hover:bg-green-50' : 'hover:bg-red-50'
+  const colorClass = categoryType === 'revenue' 
+    ? (darkMode ? 'text-green-400' : 'text-green-700')
+    : (darkMode ? 'text-red-400' : 'text-red-700')
+  const bgColorClass = categoryType === 'revenue' 
+    ? (darkMode ? 'hover:bg-green-900/30' : 'hover:bg-green-50')
+    : (darkMode ? 'hover:bg-red-900/30' : 'hover:bg-red-50')
 
   return (
     <tr
       ref={setNodeRef}
       style={style}
-      className={`hover:bg-slate-50 border-b border-slate-100 ${isDragging ? 'bg-slate-100' : ''}`}
+      className={cn(
+        "border-b transition-all duration-200",
+        darkMode 
+          ? "hover:bg-gray-700/30 border-gray-700" 
+          : "hover:bg-slate-50 border-slate-100",
+        index % 2 === 0 && (darkMode ? "bg-gray-800/30" : "bg-slate-50/30"),
+        isDragging && (darkMode ? 'bg-gray-700' : 'bg-slate-100')
+      )}
     >
-      <td className="p-3 font-medium text-slate-700">
+      <td className={cn(
+        "p-3 font-medium sticky left-0 z-10",
+        darkMode ? "text-gray-200 bg-gray-800" : "text-slate-700 bg-white"
+      )}>
         <div className="flex items-center space-x-2">
           {/* Drag Handle */}
           <div
             {...attributes}
             {...listeners}
-            className={`cursor-grab active:cursor-grabbing p-1 rounded ${bgColorClass} transition-colors`}
+            className={cn(
+              "cursor-grab active:cursor-grabbing p-1 rounded transition-colors",
+              bgColorClass
+            )}
           >
-            <GripVertical className={`w-4 h-4 ${colorClass}`} />
+            <GripVertical className={cn("w-4 h-4", colorClass)} />
           </div>
           
           {categoryType === 'revenue' && (
             <button
               onClick={() => onToggleDetails(categoryName)}
-              className="p-1 hover:bg-slate-200 rounded transition-colors"
+              className={cn(
+                "p-1 rounded transition-colors",
+                darkMode ? "hover:bg-gray-600" : "hover:bg-slate-200"
+              )}
             >
               {expandedCategories[categoryName] ? 
                 <ChevronDown className="w-4 h-4" /> : 
@@ -136,7 +162,7 @@ const DraggableCategoryRow: React.FC<{
         const isEditing = editingCell === cellId
         
         return (
-          <td key={month} className="p-2 text-center">
+          <td key={month} className="p-1 md:p-2 text-center">
             {isEditing ? (
               <Input
                 value={editValue}
@@ -146,20 +172,29 @@ const DraggableCategoryRow: React.FC<{
                   if (e.key === 'Escape') setEditingCell(null)
                 }}
                 onBlur={onCellSave}
-                className="h-8 text-sm w-full"
+                className={cn(
+                  "h-7 md:h-8 text-xs md:text-sm w-full",
+                  darkMode && "bg-gray-700 border-gray-600"
+                )}
                 autoFocus
               />
             ) : (
               <button
                 onClick={() => onCellClick(categoryName, month)}
-                className="w-full h-8 text-sm hover:bg-slate-100 rounded px-2 transition-colors group"
+                className={cn(
+                  "w-full h-7 md:h-8 text-xs md:text-sm rounded px-1 md:px-2 transition-all group",
+                  darkMode ? "hover:bg-gray-700" : "hover:bg-slate-100",
+                  value > 0 && "font-medium"
+                )}
               >
                 {value === 0 ? (
-                  <span className="text-slate-400">−</span>
+                  <span className={darkMode ? "text-gray-500" : "text-slate-400"}>−</span>
                 ) : (
-                  <span className={`font-medium ${colorClass}`}>{formatCurrency(value)}</span>
+                  <span className={cn("font-medium", colorClass)}>{formatCurrency(value)}</span>
                 )}
-                <Edit3 className="w-3 h-3 ml-1 opacity-0 group-hover:opacity-50 transition-opacity inline" />
+                {!zenMode && (
+                  <Edit3 className="w-3 h-3 ml-1 opacity-0 group-hover:opacity-50 transition-opacity inline" />
+                )}
               </button>
             )}
           </td>
@@ -167,21 +202,26 @@ const DraggableCategoryRow: React.FC<{
       })}
 
       {/* Delete button */}
-      <td className="p-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => onDeleteCategory(categoryName)}
-          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-        >
-          <Trash2 className="w-4 h-4" />
-        </Button>
-      </td>
+      {!zenMode && (
+        <td className="p-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onDeleteCategory(categoryName)}
+            className={cn(
+              "transition-colors",
+              darkMode 
+                ? "text-red-400 hover:text-red-300 hover:bg-red-900/20" 
+                : "text-red-600 hover:text-red-700 hover:bg-red-50"
+            )}
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        </td>
+      )}
     </tr>
   )
 }
-=======
->>>>>>> 9dc772604aa370954d6607c7081369ce5f5a7776
 
 // 🎯 COLLAPSIBLE FINANCE DASHBOARD - Structured sections with CRUD
 export const CollapsibleFinanceDashboard: React.FC = () => {
@@ -217,8 +257,7 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
     loadData
   } = useSupabaseFinance(selectedYear)
 
-  // Importiamo supabase per il drag & drop
-  const { createClient } = require('@supabase/supabase-js')
+  // Supabase client per drag & drop
   const supabase = createClient(
     'https://udeavsfewakatewsphfw.supabase.co',
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVkZWF2c2Zld2FrYXRld3NwaGZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM2OTU2MzIsImV4cCI6MjA2OTI3MTYzMn0.7JuPSYEG-UoxvmYecVUgjWIAJ0PQYHeN2wiTnYp2NjY'
@@ -897,6 +936,8 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
                           editingCell={editingCell}
                           editValue={editValue}
                           expandedCategories={expandedCategories}
+                          darkMode={darkMode}
+                          zenMode={zenMode}
                           onCellClick={handleCellClick}
                           onCellSave={handleCellSave}
                           onToggleDetails={toggleCategoryDetails}
@@ -1039,6 +1080,8 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
                           editingCell={editingCell}
                           editValue={editValue}
                           expandedCategories={expandedCategories}
+                          darkMode={darkMode}
+                          zenMode={zenMode}
                           onCellClick={handleCellClick}
                           onCellSave={handleCellSave}
                           onToggleDetails={toggleCategoryDetails}
