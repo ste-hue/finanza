@@ -550,6 +550,17 @@ export const useSupabaseFinance = (year: number = 2025) => {
       if (error) throw error
 
       // Get categories structure
+      // First get ORTI company ID
+      const { data: company, error: companyError } = await supabase
+        .from('companies')
+        .select('id')
+        .eq('name', 'ORTI')
+        .single()
+
+      if (companyError || !company) {
+        throw new Error('Impossibile trovare la società ORTI nel database')
+      }
+
       const { data: categoriesData, error: catError } = await supabase
         .from('categories')
         .select(`
@@ -558,7 +569,7 @@ export const useSupabaseFinance = (year: number = 2025) => {
             id, name
           )
         `)
-        .eq('company_name', 'ORTI')
+        .eq('company_id', company.id)
 
       if (catError) throw catError
 
