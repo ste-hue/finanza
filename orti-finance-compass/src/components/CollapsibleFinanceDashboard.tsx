@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { useSupabaseFinance } from '@/hooks/useSupabaseFinance'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -45,6 +45,7 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { createClient } from '@supabase/supabase-js'
+import { supabase } from '@/lib/supabase'
 
 // 🎯 DRAGGABLE CATEGORY ROW COMPONENT
 const DraggableCategoryRow: React.FC<{
@@ -261,12 +262,6 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
     loadData
   } = useSupabaseFinance(selectedYear)
 
-  // Supabase client per drag & drop
-  const supabase = createClient(
-    'https://udeavsfewakatewsphfw.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVkZWF2c2Zld2FrYXRld3NwaGZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM2OTU2MzIsImV4cCI6MjA2OTI3MTYzMn0.7JuPSYEG-UoxvmYecVUgjWIAJ0PQYHeN2wiTnYp2NjY'
-  )
-
   const months = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic']
   
   // 🎯 Drag & Drop sensors
@@ -413,23 +408,38 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
     }
   }
 
+  // 📊 Optimize category filtering with useMemo
+  const { revenueCategories, expenseCategories } = useMemo(() => {
+    const revenues = Object.entries(categories)
+      .filter(([_, cat]) => {
+        const categoryType = cat.type
+        return categoryType === 'revenue' || categoryType === 'revenues'
+      })
+      .sort((a, b) => a[1].sort_order - b[1].sort_order)
+      .map(([name, _]) => name)
+    
+    const expenses = Object.entries(categories)
+      .filter(([_, cat]) => {
+        const categoryType = cat.type
+        return categoryType === 'expense' || categoryType === 'expenses'
+      })
+      .sort((a, b) => a[1].sort_order - b[1].sort_order)
+      .map(([name, _]) => name)
+    
+    return { 
+      revenueCategories: revenues, 
+      expenseCategories: expenses 
+    }
+  }, [categories])
+
   // 📊 Get category data by type (SORTED by sort_order)
   const getCategoriesByType = (type: string) => {
     console.log('Looking for categories with type:', type)
     console.log('Available categories:', categories)
     
-    return Object.entries(categories)
-      .filter(([name, data]) => {
-        console.log(`Category ${name} has type:`, data.type)
-        // Handle both 'expense' and 'expenses' variations
-        const categoryType = data.type
-        const matches = categoryType === type || 
-                       (type === 'expense' && categoryType === 'expenses') ||
-                       (type === 'revenue' && categoryType === 'revenues')
-        return matches
-      })
-      .sort((a, b) => a[1].sort_order - b[1].sort_order) // Sort by sort_order!
-      .map(([name, _]) => name)
+    return type === 'revenue' || type === 'revenues' 
+      ? revenueCategories 
+      : expenseCategories
   }
 
   // 🧮 Calculate totals
