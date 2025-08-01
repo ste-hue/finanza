@@ -27,6 +27,7 @@ import {
   X
 } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
+import { DataExportImport } from '@/components/DataExportImport'
 import { cn } from '@/lib/utils'
 import {
   DndContext,
@@ -254,6 +255,8 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
     saveEntry,
     createCategory,
     deleteCategory,
+    exportData,
+    importData,
     updateCategoryOrder,
     loadData
   } = useSupabaseFinance(selectedYear)
@@ -824,6 +827,15 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
               </div>
             </div>
           )}
+        </div>
+
+        {/* 📤 EXPORT/IMPORT */}
+        <div className="mb-6">
+          <DataExportImport
+            onExport={exportData}
+            onImport={importData}
+            exportFilename={`orti-finance-${selectedYear}`}
+          />
         </div>
 
         {/* 💰 SEZIONE ENTRATE */}
