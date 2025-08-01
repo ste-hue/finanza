@@ -24,10 +24,11 @@ import {
   EyeOff,
   BarChart3,
   Menu,
-  X
+  X,
+  FileJson
 } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
-import { DataExportImport } from '@/components/DataExportImport'
+import { DataExportImportModal } from '@/components/DataExportImportModal'
 import { cn } from '@/lib/utils'
 import {
   DndContext,
@@ -583,10 +584,10 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
           zenMode ? "max-w-full" : "max-w-7xl p-4 md:p-6"
         )}>
           {/* 📊 HEADER - Responsive & Enhanced */}
+          {!zenMode && (
           <div className={cn(
             "rounded-lg border p-4 md:p-6 mb-4 md:mb-6 transition-all duration-300",
-            darkMode ? "bg-gray-800 border-gray-700" : "bg-white border-slate-200",
-            zenMode && "border-0 shadow-sm"
+            darkMode ? "bg-gray-800 border-gray-700" : "bg-white border-slate-200"
           )}>
             {/* Top Controls Bar */}
             <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
@@ -641,6 +642,13 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
                 {Object.values(expandedSections).some(v => v) ? 'Chiudi' : 'Espandi'} Tutto
               </Button>
               
+              <DataExportImportModal
+                onExport={exportData}
+                onImport={importData}
+                exportFilename={`orti-finance-${selectedYear}`}
+                darkMode={darkMode}
+              />
+              
               <Button
                 variant="outline"
                 size="sm"
@@ -693,6 +701,23 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
                 }
                 {Object.values(expandedSections).some(v => v) ? 'Chiudi' : 'Espandi'} Tutto
               </Button>
+              
+              <DataExportImportModal
+                onExport={exportData}
+                onImport={importData}
+                exportFilename={`orti-finance-${selectedYear}`}
+                darkMode={darkMode}
+                trigger={
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-start"
+                  >
+                    <FileJson className="h-4 w-4 mr-2" />
+                    Import/Export
+                  </Button>
+                }
+              />
               
               <Button
                 variant="outline"
@@ -828,15 +853,36 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
             </div>
           )}
         </div>
+        )}
 
-        {/* 📤 EXPORT/IMPORT */}
-        <div className="mb-6">
-          <DataExportImport
-            onExport={exportData}
-            onImport={importData}
-            exportFilename={`orti-finance-${selectedYear}`}
-          />
-        </div>
+        {/* Zen Mode Header - Minimal */}
+        {zenMode && (
+          <div className="flex items-center justify-between mb-4 px-2">
+            <h1 className={cn(
+              "text-lg font-light",
+              darkMode ? "text-gray-100" : "text-slate-800"
+            )}>
+              Dashboard Finanziaria {selectedYear}
+            </h1>
+            <div className="flex items-center gap-2">
+              <DataExportImportModal
+                onExport={exportData}
+                onImport={importData}
+                exportFilename={`orti-finance-${selectedYear}`}
+                darkMode={darkMode}
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setZenMode(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
+
+
 
         {/* 💰 SEZIONE ENTRATE */}
         <Card className={cn(
@@ -1212,7 +1258,7 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
         </Card>
 
         {/* 📊 GRAFICI - Se attivati */}
-        {showCharts && (
+        {showCharts && !zenMode && (
           <Card className={cn(
             "mb-4 md:mb-6 transition-all duration-300",
             darkMode ? "bg-gray-800 border-gray-700" : ""
