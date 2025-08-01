@@ -1,12 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
-import { createClient } from '@supabase/supabase-js'
 import { toast } from '@/hooks/use-toast'
-
-// 🎯 UNIFIED SUPABASE FINANCE HOOK - Zero complexity, maximum efficiency
-const supabase = createClient(
-  'https://udeavsfewakatewsphfw.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVkZWF2c2Zld2FrYXRld3NwaGZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM2OTU2MzIsImV4cCI6MjA2OTI3MTYzMn0.7JuPSYEG-UoxvmYecVUgjWIAJ0PQYHeN2wiTnYp2NjY'
-)
+import { supabase } from '@/lib/supabase' // 🌍 Global shared client
 
 interface FinanceData {
   consolidated: { revenues: number; expenses: number }
@@ -32,44 +26,70 @@ export const useSupabaseFinance = (year: number = 2025) => {
   const [error, setError] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<'combined' | 'consolidated' | 'projections'>('combined')
 
-  // 📊 Load financial data with single optimized query
+  // 📊 Load financial data with separate queries for categories and entries
   const loadData = useCallback(async () => {
     setLoading(true)
     setError(null)
     
     try {
-      // 🔧 Simplified query - first get entries for ORTI categories WITH sort_order
-      const { data: entries, error: queryError } = await supabase
+      // 🏢 First get ORTI company ID
+      const { data: company, error: companyError } = await supabase
+        .from('companies')
+        .select('id')
+        .eq('name', 'ORTI')
+        .single()
+
+      if (companyError || !company) {
+        throw new Error('Impossibile trovare la società ORTI nel database')
+      }
+
+      // 📂 Load ALL categories for ORTI (regardless of entries)
+      const { data: categoriesData, error: categoriesError } = await supabase
+        .from('categories')
+        .select(`
+          id, name, type_id, sort_order,
+          subcategories (
+            id, name
+          )
+        `)
+        .eq('company_id', company.id)
+        .order('sort_order', { ascending: true })
+
+      if (categoriesError) {
+        console.error('Categories Query Error:', categoriesError)
+        throw categoriesError
+      }
+
+      // 📋 Load ALL entries for the year (with subcategory relationship)
+      const { data: entriesData, error: entriesError } = await supabase
         .from('entries')
         .select(`
           id, value, year, month, is_projection, notes,
           subcategories (
-            name,
-            categories (
-              name, type_id, sort_order
-            )
+            id, name, category_id
           )
         `)
         .eq('year', year)
         .order('month', { ascending: true })
 
-      if (queryError) {
-        console.error('Query Error:', queryError)
-        throw queryError
+      if (entriesError) {
+        console.error('Entries Query Error:', entriesError)
+        throw entriesError
       }
 
-      console.log('Loaded entries:', entries?.length || 0)
-      if (entries?.length > 0) {
-        console.log('Sample entry:', entries[0])
+      console.log('Loaded categories:', categoriesData?.length || 0)
+      console.log('Loaded entries:', entriesData?.length || 0)
+      if (entriesData?.length > 0) {
+        console.log('Sample entry:', entriesData[0])
       }
 
-      // 🧮 Process data client-side (faster than SQL aggregations)
-      const processed = processEntries(entries || [])
+      // 🧮 Process data with separate categories and entries
+      const processed = processDataSeparately(categoriesData || [], entriesData || [])
       setData(processed)
       
       toast({
         title: "✅ Data loaded",
-        description: `${entries?.length || 0} entries for ${year}`
+        description: `${categoriesData?.length || 0} categories, ${entriesData?.length || 0} entries for ${year}`
       })
       
     } catch (err: any) {
@@ -84,7 +104,99 @@ export const useSupabaseFinance = (year: number = 2025) => {
     }
   }, [year])
 
-  // 🔄 Process entries into organized structure
+  // 🔄 Process categories and entries separately into organized structure
+  const processDataSeparately = (categoriesData: any[], entriesData: any[]): FinanceData => {
+    const consolidated = { revenues: 0, expenses: 0 }
+    const projections = { revenues: 0, expenses: 0 }
+    const categories: { [key: string]: { consolidated: number; projections: number; type: string; sort_order: number } } = {}
+    const monthlyData: { [month: number]: { revenues: number; expenses: number } } = {}
+    const categoryMonthlyData: { [categoryName: string]: { [month: number]: { consolidated: number; projections: number } } } = {}
+
+    // Initialize months
+    for (let i = 1; i <= 12; i++) {
+      monthlyData[i] = { revenues: 0, expenses: 0 }
+    }
+
+    // 📂 First, initialize ALL categories (even without entries)
+    categoriesData.forEach(category => {
+      categories[category.name] = {
+        consolidated: 0,
+        projections: 0,
+        type: category.type_id,
+        sort_order: category.sort_order || 999
+      }
+      
+      // Initialize monthly data for all categories
+      categoryMonthlyData[category.name] = {}
+      for (let month = 1; month <= 12; month++) {
+        categoryMonthlyData[category.name][month] = { consolidated: 0, projections: 0 }
+      }
+    })
+
+    // Create a lookup map from subcategory_id to category for faster processing
+    const subcategoryToCategoryMap: { [subcategoryId: string]: any } = {}
+    categoriesData.forEach(category => {
+      category.subcategories?.forEach((subcategory: any) => {
+        subcategoryToCategoryMap[subcategory.id] = {
+          name: category.name,
+          type_id: category.type_id,
+          sort_order: category.sort_order
+        }
+      })
+    })
+
+    // 📋 Now process entries and add them to the initialized categories
+    entriesData.forEach(entry => {
+      const subcategoryId = entry.subcategories?.id
+      if (!subcategoryId || !subcategoryToCategoryMap[subcategoryId]) {
+        console.warn('Skipping entry without valid subcategory:', entry)
+        return
+      }
+
+      const categoryInfo = subcategoryToCategoryMap[subcategoryId]
+      const categoryName = categoryInfo.name
+      const categoryType = categoryInfo.type_id
+      const value = Number(entry.value) || 0
+      const isProjection = entry.is_projection
+      const month = entry.month
+
+      // Add to appropriate buckets
+      if (isProjection) {
+        categories[categoryName].projections += value
+        categoryMonthlyData[categoryName][month].projections += value
+        if (categoryType === 'revenue') {
+          projections.revenues += value
+        } else if (categoryType === 'expense') {
+          projections.expenses += value
+        }
+      } else {
+        categories[categoryName].consolidated += value
+        categoryMonthlyData[categoryName][month].consolidated += value
+        if (categoryType === 'revenue') {
+          consolidated.revenues += value
+          monthlyData[month].revenues += value
+        } else if (categoryType === 'expense') {
+          consolidated.expenses += value
+          monthlyData[month].expenses += value
+        }
+      }
+    })
+
+    return {
+      consolidated,
+      projections,
+      combined: {
+        revenues: consolidated.revenues + projections.revenues,
+        expenses: consolidated.expenses + projections.expenses
+      },
+      entries: entriesData,
+      categories,
+      monthlyData,
+      categoryMonthlyData
+    }
+  }
+
+  // 🔄 Process entries into organized structure (legacy function - keep for compatibility)
   const processEntries = (entries: any[]): FinanceData => {
     const consolidated = { revenues: 0, expenses: 0 }
     const projections = { revenues: 0, expenses: 0 }
@@ -286,6 +398,19 @@ export const useSupabaseFinance = (year: number = 2025) => {
         throw new Error('Impossibile trovare la società ORTI nel database')
       }
       
+      // Check if category with same name already exists
+      const { data: existingCategory, error: checkError } = await supabase
+        .from('categories')
+        .select('id')
+        .eq('name', categoryData.name)
+        .eq('company_id', company.id)
+        .maybeSingle()
+      
+      if (checkError) throw checkError
+      if (existingCategory) {
+        throw new Error(`Categoria '${categoryData.name}' esiste già`)
+      }
+      
       // Insert new category
       const { data: newCategory, error: categoryError } = await supabase
         .from('categories')
@@ -338,15 +463,19 @@ export const useSupabaseFinance = (year: number = 2025) => {
     try {
       console.log('🗑️ Deleting category:', categoryName)
       
-      // First get category ID
-      const { data: category, error: categoryError } = await supabase
+      // First get category ID (handle duplicates gracefully)
+      const { data: categories, error: categoryError } = await supabase
         .from('categories')
         .select('id')
         .eq('name', categoryName)
-        .single()
+        .limit(1)
 
       if (categoryError) throw categoryError
-      if (!category) throw new Error(`Categoria '${categoryName}' non trovata`)
+      if (!categories || categories.length === 0) {
+        throw new Error(`Categoria '${categoryName}' non trovata`)
+      }
+      
+      const category = categories[0]
 
       // Delete all entries for this category's subcategories
       const { data: subcategories } = await supabase
@@ -640,6 +769,27 @@ export const useSupabaseFinance = (year: number = 2025) => {
     }
   }, [year, loadData])
 
+  // 🎯 Optimistic update for drag & drop (local state only)
+  const updateCategoriesOrderOptimistic = useCallback((newOrderedCategories: string[], categoryType: string) => {
+    const newCategoriesState = { ...data.categories }
+    
+    // Update sort_order for the reordered categories
+    newOrderedCategories.forEach((categoryName, index) => {
+      if (newCategoriesState[categoryName] && newCategoriesState[categoryName].type === categoryType) {
+        newCategoriesState[categoryName] = {
+          ...newCategoriesState[categoryName],
+          sort_order: index + 1
+        }
+      }
+    })
+    
+    // Update local state immediately (no DB call)
+    setData(prevData => ({
+      ...prevData,
+      categories: newCategoriesState
+    }))
+  }, [data.categories])
+
   const displayData = getDisplayData()
 
   return {
@@ -670,6 +820,7 @@ export const useSupabaseFinance = (year: number = 2025) => {
     deleteCategory,
     exportData,
     importData,
-    updateCategoryOrder
+    updateCategoryOrder,
+    updateCategoriesOrderOptimistic
   }
 }

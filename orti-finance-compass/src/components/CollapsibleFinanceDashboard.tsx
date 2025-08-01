@@ -1,5 +1,6 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { useSupabaseFinance } from '@/hooks/useSupabaseFinance'
+import { supabase } from '@/lib/supabase' // 🌍 Global shared client
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardHeader, CardContent } from '@/components/ui/card'
@@ -45,7 +46,7 @@ import {
   useSortable,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { createClient } from '@supabase/supabase-js'
+// Removed: createClient import - using global client instead
 
 // 🎯 DRAGGABLE CATEGORY ROW COMPONENT
 const DraggableCategoryRow: React.FC<{
@@ -259,14 +260,12 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
     exportData,
     importData,
     updateCategoryOrder,
+    updateCategoriesOrderOptimistic,
     loadData
   } = useSupabaseFinance(selectedYear)
 
-  // Supabase client per drag & drop
-  const supabase = createClient(
-    'https://udeavsfewakatewsphfw.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVkZWF2c2Zld2FrYXRld3NwaGZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM2OTU2MzIsImV4cCI6MjA2OTI3MTYzMn0.7JuPSYEG-UoxvmYecVUgjWIAJ0PQYHeN2wiTnYp2NjY'
-  )
+  // 🌍 Global Supabase client - no more multiple instances!
+  // Import moved to top level to use shared singleton
 
   const months = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic']
   
@@ -414,29 +413,48 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
     }
   }
 
-  // 📊 Get category data by type (SORTED by sort_order)
-  const getCategoriesByType = (type: string) => {
-    console.log('Looking for categories with type:', type)
-    console.log('Available categories:', categories)
-    
+  // 📊 Get category data by type (MEMOIZED to prevent re-renders)
+  const revenueCategories = useMemo(() => {
     return Object.entries(categories)
       .filter(([name, data]) => {
-        console.log(`Category ${name} has type:`, data.type)
-        // Handle both 'expense' and 'expenses' variations
+        const categoryType = data.type
+        return categoryType === 'revenue' || categoryType === 'revenues'
+      })
+      .sort((a, b) => a[1].sort_order - b[1].sort_order)
+      .map(([name, _]) => name)
+  }, [categories])
+
+  const expenseCategories = useMemo(() => {
+    return Object.entries(categories)
+      .filter(([name, data]) => {
+        const categoryType = data.type
+        return categoryType === 'expense' || categoryType === 'expenses'
+      })
+      .sort((a, b) => a[1].sort_order - b[1].sort_order)
+      .map(([name, _]) => name)
+  }, [categories])
+
+  // Legacy function for backward compatibility
+  const getCategoriesByType = (type: string) => {
+    if (type === 'revenue') return revenueCategories
+    if (type === 'expense') return expenseCategories
+    // Fallback for other types
+    return Object.entries(categories)
+      .filter(([name, data]) => {
         const categoryType = data.type
         const matches = categoryType === type || 
                        (type === 'expense' && categoryType === 'expenses') ||
                        (type === 'revenue' && categoryType === 'revenues')
         return matches
       })
-      .sort((a, b) => a[1].sort_order - b[1].sort_order) // Sort by sort_order!
+      .sort((a, b) => a[1].sort_order - b[1].sort_order)
       .map(([name, _]) => name)
   }
 
-  // 🧮 Calculate totals
+  // 🧮 Calculate totals (using memoized categories)
   const calculateTotals = () => {
-    const entrate = getCategoriesByType('revenue')
-    const uscite = getCategoriesByType('expense')
+    const entrate = revenueCategories
+    const uscite = expenseCategories
     
     const totaleEntrate = entrate.reduce((sum, cat) => {
       const categoryData = categories[cat]
@@ -491,32 +509,83 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
     }
 
     try {
-      // Calculate new sort orders
-      const activeSortOrder = categories[activeId].sort_order
-      const overSortOrder = categories[overId].sort_order
-
-      // Update both categories in database
-      const { error: error1 } = await supabase
-        .from('categories')
-        .update({ sort_order: overSortOrder })
-        .eq('name', activeId)
-
-      const { error: error2 } = await supabase
-        .from('categories')
-        .update({ sort_order: activeSortOrder })
-        .eq('name', overId)
-
-      if (error1 || error2) {
-        throw new Error(`Errore riordinamento: ${error1?.message || error2?.message}`)
+      // 🎯 OPTIMISTIC UPDATE: Update UI immediately, save to DB in background
+      
+      // 1️⃣ STEP 1: Calculate new sort orders locally
+      const sameTypeCategories = getCategoriesByType(activeCategory.type)
+      const activeIndex = sameTypeCategories.indexOf(activeId)
+      const overIndex = sameTypeCategories.indexOf(overId)
+      
+      // Create new order: move active category to over position
+      const reorderedCategories = [...sameTypeCategories]
+      const [movedCategory] = reorderedCategories.splice(activeIndex, 1)
+      reorderedCategories.splice(overIndex, 0, movedCategory)
+      
+      // 2️⃣ STEP 2: Update UI state immediately (OPTIMISTIC)
+      // This updates the local state instantly - NO LOADING, NO FLASH!
+      updateCategoriesOrderOptimistic(reorderedCategories, activeCategory.type)
+      // This creates smooth UX while DB updates in background
+      
+      // 3️⃣ STEP 3: Save to database in BACKGROUND (async, non-blocking)
+      const saveToDatabase = async () => {
+        try {
+          // Get ORTI company ID
+          const { data: company } = await supabase
+            .from('companies')
+            .select('id')
+            .eq('name', 'ORTI')
+            .single()
+          
+          if (!company) throw new Error('Company ORTI not found')
+          
+          // Get category IDs for the reordered list
+          const { data: categoryList } = await supabase
+            .from('categories')
+            .select('id, name')
+            .eq('company_id', company.id)
+            .eq('type_id', activeCategory.type)
+          
+          if (!categoryList) throw new Error('Could not fetch categories')
+          
+          // Update sort_orders in database
+          const dbUpdates = reorderedCategories.map((categoryName, index) => {
+            const categoryRecord = categoryList.find(cat => cat.name === categoryName)
+            if (!categoryRecord) return null
+            
+            return supabase
+              .from('categories')
+              .update({ sort_order: index + 1 })
+              .eq('id', categoryRecord.id)
+          }).filter(Boolean)
+          
+          const results = await Promise.all(dbUpdates)
+          const errors = results.filter(result => result.error)
+          
+          if (errors.length > 0) {
+            throw new Error('Database update failed')
+          }
+          
+          // Success - no need to update UI, it's already updated!
+          return true
+          
+        } catch (dbError) {
+          // 4️⃣ STEP 4: If DB fails, revert UI (rare case)
+          console.error('Database save failed, reverting UI:', dbError)
+          await loadData() // Only reload on error
+          throw dbError
+        }
       }
+      
+      // Start database save in background (don't await)
+      saveToDatabase()
 
+      // ✨ IMMEDIATE SUCCESS - No loading, no flash!
       toast({
         title: "✅ Ordine aggiornato",
-        description: `${activeId} spostata con drag & drop`
+        description: `${activeId} spostata istantaneamente`
       })
-
-      // Reload data
-      await loadData()
+      
+      // 🚀 NO loadData() here - UI already updated optimistically!
 
     } catch (err: unknown) {
       console.error('🚨 DRAG & DROP ERROR:', err)
@@ -530,7 +599,8 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
     setActiveDragId(null)
   }
 
-  const totals = calculateTotals()
+  // 🧮 Memoize totals calculation to prevent infinite re-renders
+  const totals = useMemo(() => calculateTotals(), [categories])
 
   if (loading) {
     return (
