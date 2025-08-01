@@ -196,15 +196,21 @@ export const useSupabaseFinance = (year: number = 2025) => {
       }
       if (!subcategory) throw new Error('Subcategory not found')
 
-      // 🔍 First check if entry exists
-      const { data: existingEntry } = await supabase
+      // 🔍 First check if entry exists (with better error handling)
+      const { data: existingEntry, error: searchError } = await supabase
         .from('entries')
         .select('id')
         .eq('subcategory_id', subcategory.id)
         .eq('year', year)
         .eq('month', entryData.month)
         .eq('is_projection', entryData.isProjection)
-        .single()
+        .maybeSingle() // Use maybeSingle instead of single to handle not found
+
+      // Ignore "not found" errors, only throw on real errors
+      if (searchError && searchError.code !== 'PGRST116') {
+        console.error('Search error:', searchError)
+        throw new Error(`Errore ricerca entry: ${searchError.message}`)
+      }
 
       const entryPayload = {
         subcategory_id: subcategory.id,
@@ -217,19 +223,29 @@ export const useSupabaseFinance = (year: number = 2025) => {
 
       if (existingEntry) {
         // Update existing
-        await supabase
+        const { error: updateError } = await supabase
           .from('entries')
           .update(entryPayload)
           .eq('id', existingEntry.id)
+          
+        if (updateError) {
+          console.error('Update error:', updateError)
+          throw new Error(`Errore aggiornamento: ${updateError.message}`)
+        }
       } else {
         // Insert new
-        await supabase
+        const { error: insertError } = await supabase
           .from('entries')
           .insert(entryPayload)
+          
+        if (insertError) {
+          console.error('Insert error:', insertError)
+          throw new Error(`Errore inserimento: ${insertError.message}`)
+        }
       }
 
-      // Immediate reload
-      await loadData()
+      // Immediate reload (with small delay to prevent conflicts)
+      setTimeout(() => loadData(), 100)
       
       toast({
         title: "✅ Entry saved",
@@ -249,11 +265,21 @@ export const useSupabaseFinance = (year: number = 2025) => {
   const createCategory = useCallback(async (categoryData: {
     name: string
     type_id: 'revenue' | 'expense' | 'balance'
-    company_id: string
     sort_order?: number
   }) => {
     try {
       console.log('➕ Creating category:', categoryData)
+      
+      // First, get the ORTI company ID from database
+      const { data: company, error: companyError } = await supabase
+        .from('companies')
+        .select('id')
+        .eq('name', 'ORTI')
+        .single()
+
+      if (companyError || !company) {
+        throw new Error('Impossibile trovare la società ORTI nel database')
+      }
       
       // Insert new category
       const { data: newCategory, error: categoryError } = await supabase
@@ -261,13 +287,16 @@ export const useSupabaseFinance = (year: number = 2025) => {
         .insert({
           name: categoryData.name,
           type_id: categoryData.type_id,
-          company_id: categoryData.company_id,
+          company_id: company.id,
           sort_order: categoryData.sort_order || 1
         })
         .select()
         .single()
 
-      if (categoryError) throw categoryError
+      if (categoryError) {
+        console.error('Category creation error:', categoryError)
+        throw new Error(`Errore creazione categoria: ${categoryError.message}`)
+      }
 
       // Create default 'Main' subcategory
       const { error: subcategoryError } = await supabase
@@ -390,8 +419,10 @@ export const useSupabaseFinance = (year: number = 2025) => {
     }
   }
 
-  // 🚀 Real-time subscription
+  // 🚀 Real-time subscription with debounce
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout
+    
     const subscription = supabase
       .channel('entries-changes')
       .on('postgres_changes', { 
@@ -399,11 +430,18 @@ export const useSupabaseFinance = (year: number = 2025) => {
         schema: 'public', 
         table: 'entries' 
       }, () => {
-        loadData() // Auto-refresh on changes
+        // Debounce to prevent infinite loops
+        clearTimeout(timeoutId)
+        timeoutId = setTimeout(() => {
+          loadData()
+        }, 500) // Wait 500ms before reloading
       })
       .subscribe()
 
-    return () => { subscription.unsubscribe() }
+    return () => { 
+      clearTimeout(timeoutId)
+      subscription.unsubscribe() 
+    }
   }, [loadData])
 
   // Load data on mount/year change

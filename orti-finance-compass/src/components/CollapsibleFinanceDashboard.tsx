@@ -31,6 +31,7 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
     'banche': true,
     'affidamenti': true
   })
+  const [expandedCategories, setExpandedCategories] = useState<{ [key: string]: boolean }>({})
 
   const { 
     loading, 
@@ -55,6 +56,14 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
     setExpandedSections(prev => ({
       ...prev,
       [sectionKey]: !prev[sectionKey]
+    }))
+  }
+
+  // 🔄 Toggle category subcategories expansion
+  const toggleCategoryDetails = (categoryName: string) => {
+    setExpandedCategories(prev => ({
+      ...prev,
+      [categoryName]: !prev[categoryName]
     }))
   }
 
@@ -127,12 +136,16 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
       await createCategory({
         name: newCategoryName,
         type_id: type,
-        company_id: 'ORTI', // Assuming ORTI company
         sort_order: Object.keys(categories).length + 1
       })
       setNewCategoryName('')
     } catch (err) {
-      // Error already handled in createCategory
+      console.error('Add category error:', err)
+      toast({
+        title: "❌ Errore",
+        description: "Impossibile creare la categoria. Verifica la connessione al database.",
+        variant: "destructive"
+      })
     }
   }
 
@@ -149,8 +162,19 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
 
   // 📊 Get category data by type
   const getCategoriesByType = (type: string) => {
+    console.log('Looking for categories with type:', type)
+    console.log('Available categories:', categories)
+    
     return Object.entries(categories)
-      .filter(([_, data]) => data.type === type)
+      .filter(([name, data]) => {
+        console.log(`Category ${name} has type:`, data.type)
+        // Handle both 'expense' and 'expenses' variations
+        const categoryType = data.type
+        const matches = categoryType === type || 
+                       (type === 'expense' && categoryType === 'expenses') ||
+                       (type === 'revenue' && categoryType === 'revenues')
+        return matches
+      })
       .map(([name, _]) => name)
   }
 
@@ -314,7 +338,20 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
                   <tbody>
                     {getCategoriesByType('revenue').map((categoryName) => (
                       <tr key={categoryName} className="hover:bg-slate-50 border-b border-slate-100">
-                        <td className="p-3 font-medium text-slate-700">{categoryName}</td>
+                        <td className="p-3 font-medium text-slate-700">
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() => toggleCategoryDetails(categoryName)}
+                              className="p-1 hover:bg-slate-200 rounded transition-colors"
+                            >
+                              {expandedCategories[categoryName] ? 
+                                <ChevronDown className="w-4 h-4" /> : 
+                                <ChevronRight className="w-4 h-4" />
+                              }
+                            </button>
+                            <span>{categoryName}</span>
+                          </div>
+                        </td>
                         {months.map((_, monthIndex) => {
                           const month = monthIndex + 1
                           const cellId = `${categoryName}-${month}`
