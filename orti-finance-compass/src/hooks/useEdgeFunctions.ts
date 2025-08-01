@@ -1,11 +1,5 @@
-import { createClient } from '@supabase/supabase-js'
 import { toast } from '@/hooks/use-toast'
-
-// 🚀 Hook per chiamate Edge Functions
-const supabase = createClient(
-  'https://udeavsfewakatewsphfw.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVkZWF2c2Zld2FrYXRld3NwaGZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM2OTU2MzIsImV4cCI6MjA2OTI3MTYzMn0.7JuPSYEG-UoxvmYecVUgjWIAJ0PQYHeN2wiTnYp2NjY'
-)
+import { supabase } from '@/lib/supabase' // 🌍 Global shared client
 
 export const useEdgeFunctions = () => {
   
