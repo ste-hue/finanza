@@ -14,9 +14,172 @@ import {
   TrendingDown,
   Target,
   Banknote,
-  Calculator
+  Calculator,
+  GripVertical,
+  Moon,
+  Sun,
+  Maximize2,
+  Minimize2,
+  Eye,
+  EyeOff,
+  BarChart3,
+  Menu,
+  X
 } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
+import { cn } from '@/lib/utils'
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+
+// 🎯 DRAGGABLE CATEGORY ROW COMPONENT
+const DraggableCategoryRow: React.FC<{
+  categoryName: string
+  index: number
+  categoryType: 'revenue' | 'expense'
+  months: string[]
+  editingCell: string | null
+  editValue: string
+  expandedCategories: { [key: string]: boolean }
+  onCellClick: (categoryName: string, month: number) => void
+  onCellSave: () => void
+  onToggleDetails: (categoryName: string) => void
+  onDeleteCategory: (categoryName: string) => void
+  getCellValue: (categoryName: string, month: number) => number
+  formatCurrency: (value: number) => string
+  setEditValue: (value: string) => void
+  setEditingCell: (cellId: string | null) => void
+}> = ({
+  categoryName,
+  categoryType,
+  months,
+  editingCell,
+  editValue,
+  expandedCategories,
+  onCellClick,
+  onCellSave,
+  onToggleDetails,
+  onDeleteCategory,
+  getCellValue,
+  formatCurrency,
+  setEditValue,
+  setEditingCell
+}) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: categoryName })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  const colorClass = categoryType === 'revenue' ? 'text-green-700' : 'text-red-700'
+  const bgColorClass = categoryType === 'revenue' ? 'hover:bg-green-50' : 'hover:bg-red-50'
+
+  return (
+    <tr
+      ref={setNodeRef}
+      style={style}
+      className={`hover:bg-slate-50 border-b border-slate-100 ${isDragging ? 'bg-slate-100' : ''}`}
+    >
+      <td className="p-3 font-medium text-slate-700">
+        <div className="flex items-center space-x-2">
+          {/* Drag Handle */}
+          <div
+            {...attributes}
+            {...listeners}
+            className={`cursor-grab active:cursor-grabbing p-1 rounded ${bgColorClass} transition-colors`}
+          >
+            <GripVertical className={`w-4 h-4 ${colorClass}`} />
+          </div>
+          
+          {categoryType === 'revenue' && (
+            <button
+              onClick={() => onToggleDetails(categoryName)}
+              className="p-1 hover:bg-slate-200 rounded transition-colors"
+            >
+              {expandedCategories[categoryName] ? 
+                <ChevronDown className="w-4 h-4" /> : 
+                <ChevronRight className="w-4 h-4" />
+              }
+            </button>
+          )}
+          
+          <span className="flex-1">{categoryName}</span>
+        </div>
+      </td>
+
+      {/* Month cells */}
+      {months.map((_, monthIndex) => {
+        const month = monthIndex + 1
+        const cellId = `${categoryName}-${month}`
+        const value = getCellValue(categoryName, month)
+        const isEditing = editingCell === cellId
+        
+        return (
+          <td key={month} className="p-2 text-center">
+            {isEditing ? (
+              <Input
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') onCellSave()
+                  if (e.key === 'Escape') setEditingCell(null)
+                }}
+                onBlur={onCellSave}
+                className="h-8 text-sm w-full"
+                autoFocus
+              />
+            ) : (
+              <button
+                onClick={() => onCellClick(categoryName, month)}
+                className="w-full h-8 text-sm hover:bg-slate-100 rounded px-2 transition-colors group"
+              >
+                {value === 0 ? (
+                  <span className="text-slate-400">−</span>
+                ) : (
+                  <span className={`font-medium ${colorClass}`}>{formatCurrency(value)}</span>
+                )}
+                <Edit3 className="w-3 h-3 ml-1 opacity-0 group-hover:opacity-50 transition-opacity inline" />
+              </button>
+            )}
+          </td>
+        )
+      })}
+
+      {/* Delete button */}
+      <td className="p-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onDeleteCategory(categoryName)}
+          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+        >
+          <Trash2 className="w-4 h-4" />
+        </Button>
+      </td>
+    </tr>
+  )
+}
 
 // 🎯 COLLAPSIBLE FINANCE DASHBOARD - Structured sections with CRUD
 export const CollapsibleFinanceDashboard: React.FC = () => {
@@ -32,6 +195,11 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
     'affidamenti': true
   })
   const [expandedCategories, setExpandedCategories] = useState<{ [key: string]: boolean }>({})
+  const [activeDragId, setActiveDragId] = useState<string | null>(null)
+  const [darkMode, setDarkMode] = useState(false)
+  const [zenMode, setZenMode] = useState(false)
+  const [showCharts, setShowCharts] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   const { 
     loading, 
@@ -42,10 +210,28 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
     viewMode,
     saveEntry,
     createCategory,
-    deleteCategory
+    deleteCategory,
+    updateCategoryOrder,
+    loadData
   } = useSupabaseFinance(selectedYear)
 
+  // Importiamo supabase per il drag & drop
+  const { createClient } = require('@supabase/supabase-js')
+  const supabase = createClient(
+    'https://udeavsfewakatewsphfw.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVkZWF2c2Zld2FrYXRld3NwaGZ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM2OTU2MzIsImV4cCI6MjA2OTI3MTYzMn0.7JuPSYEG-UoxvmYecVUgjWIAJ0PQYHeN2wiTnYp2NjY'
+  )
+
   const months = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic']
+  
+  // 🎯 Drag & Drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  )
   
   // 💰 Format currency
   const formatCurrency = (value: number) => 
@@ -57,6 +243,15 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
       ...prev,
       [sectionKey]: !prev[sectionKey]
     }))
+  }
+
+  // Toggle all sections
+  const toggleAllSections = (expand: boolean) => {
+    const newState: { [key: string]: boolean } = {}
+    Object.keys(expandedSections).forEach(key => {
+      newState[key] = expand
+    })
+    setExpandedSections(newState)
   }
 
   // 🔄 Toggle category subcategories expansion
@@ -160,7 +355,7 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
     }
   }
 
-  // 📊 Get category data by type
+  // 📊 Get category data by type (SORTED by sort_order)
   const getCategoriesByType = (type: string) => {
     console.log('Looking for categories with type:', type)
     console.log('Available categories:', categories)
@@ -175,6 +370,7 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
                        (type === 'revenue' && categoryType === 'revenues')
         return matches
       })
+      .sort((a, b) => a[1].sort_order - b[1].sort_order) // Sort by sort_order!
       .map(([name, _]) => name)
   }
 
@@ -198,6 +394,81 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
       uscite: totaleUscite,
       differenza: totaleEntrate - totaleUscite
     }
+  }
+
+  // 🎯 Drag & Drop handlers
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveDragId(event.active.id as string)
+  }
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event
+    
+    if (!over || active.id === over.id) {
+      setActiveDragId(null)
+      return
+    }
+
+    const activeId = active.id as string
+    const overId = over.id as string
+
+    // Get the category type to ensure we're only reordering within the same type
+    const activeCategory = categories[activeId]
+    const overCategory = categories[overId]
+    
+    if (!activeCategory || !overCategory || activeCategory.type !== overCategory.type) {
+      setActiveDragId(null)
+      return
+    }
+
+    // Get all categories of the same type, sorted by sort_order
+    const sameTypeCategories = getCategoriesByType(activeCategory.type)
+    const activeIndex = sameTypeCategories.indexOf(activeId)
+    const overIndex = sameTypeCategories.indexOf(overId)
+
+    if (activeIndex === overIndex) {
+      setActiveDragId(null)
+      return
+    }
+
+    try {
+      // Calculate new sort orders
+      const activeSortOrder = categories[activeId].sort_order
+      const overSortOrder = categories[overId].sort_order
+
+      // Update both categories in database
+      const { error: error1 } = await supabase
+        .from('categories')
+        .update({ sort_order: overSortOrder })
+        .eq('name', activeId)
+
+      const { error: error2 } = await supabase
+        .from('categories')
+        .update({ sort_order: activeSortOrder })
+        .eq('name', overId)
+
+      if (error1 || error2) {
+        throw new Error(`Errore riordinamento: ${error1?.message || error2?.message}`)
+      }
+
+      toast({
+        title: "✅ Ordine aggiornato",
+        description: `${activeId} spostata con drag & drop`
+      })
+
+      // Reload data
+      await loadData()
+
+    } catch (err: any) {
+      console.error('🚨 DRAG & DROP ERROR:', err)
+      toast({
+        title: "❌ Errore drag & drop",
+        description: err.message || "Impossibile riordinare",
+        variant: "destructive"
+      })
+    }
+
+    setActiveDragId(null)
   }
 
   const totals = calculateTotals()
@@ -225,7 +496,12 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6">
+    <DndContext
+      sensors={sensors}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
+      <div className="min-h-screen bg-slate-50 p-6">
       <div className="max-w-7xl mx-auto">
         {/* 📊 HEADER */}
         <div className="bg-white rounded-lg border border-slate-200 p-6 mb-6">
@@ -336,70 +612,31 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {getCategoriesByType('revenue').map((categoryName) => (
-                      <tr key={categoryName} className="hover:bg-slate-50 border-b border-slate-100">
-                        <td className="p-3 font-medium text-slate-700">
-                          <div className="flex items-center space-x-2">
-                            <button
-                              onClick={() => toggleCategoryDetails(categoryName)}
-                              className="p-1 hover:bg-slate-200 rounded transition-colors"
-                            >
-                              {expandedCategories[categoryName] ? 
-                                <ChevronDown className="w-4 h-4" /> : 
-                                <ChevronRight className="w-4 h-4" />
-                              }
-                            </button>
-                            <span>{categoryName}</span>
-                          </div>
-                        </td>
-                        {months.map((_, monthIndex) => {
-                          const month = monthIndex + 1
-                          const cellId = `${categoryName}-${month}`
-                          const value = getCellValue(categoryName, month)
-                          const isEditing = editingCell === cellId
-                          
-                          return (
-                            <td key={month} className="p-2 text-center">
-                              {isEditing ? (
-                                <Input
-                                  value={editValue}
-                                  onChange={(e) => setEditValue(e.target.value)}
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter') handleCellSave()
-                                    if (e.key === 'Escape') setEditingCell(null)
-                                  }}
-                                  onBlur={handleCellSave}
-                                  className="h-8 text-sm w-full"
-                                  autoFocus
-                                />
-                              ) : (
-                                <button
-                                  onClick={() => handleCellClick(categoryName, month)}
-                                  className="w-full h-8 text-sm hover:bg-slate-100 rounded px-2 transition-colors group"
-                                >
-                                  {value === 0 ? (
-                                    <span className="text-slate-400">−</span>
-                                  ) : (
-                                    <span className="text-green-700 font-medium">{formatCurrency(value)}</span>
-                                  )}
-                                  <Edit3 className="w-3 h-3 ml-1 opacity-0 group-hover:opacity-50 transition-opacity inline" />
-                                </button>
-                              )}
-                            </td>
-                          )
-                        })}
-                        <td className="p-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteCategory(categoryName)}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
+                    <SortableContext
+                      items={getCategoriesByType('revenue')}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      {getCategoriesByType('revenue').map((categoryName, index) => (
+                        <DraggableCategoryRow
+                          key={categoryName}
+                          categoryName={categoryName}
+                          index={index}
+                          categoryType="revenue"
+                          months={months}
+                          editingCell={editingCell}
+                          editValue={editValue}
+                          expandedCategories={expandedCategories}
+                          onCellClick={handleCellClick}
+                          onCellSave={handleCellSave}
+                          onToggleDetails={toggleCategoryDetails}
+                          onDeleteCategory={handleDeleteCategory}
+                          getCellValue={getCellValue}
+                          formatCurrency={formatCurrency}
+                          setEditValue={setEditValue}
+                          setEditingCell={setEditingCell}
+                        />
+                      ))}
+                    </SortableContext>
                   </tbody>
                 </table>
               </div>
@@ -464,57 +701,31 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {getCategoriesByType('expense').map((categoryName) => (
-                      <tr key={categoryName} className="hover:bg-slate-50 border-b border-slate-100">
-                        <td className="p-3 font-medium text-slate-700">{categoryName}</td>
-                        {months.map((_, monthIndex) => {
-                          const month = monthIndex + 1
-                          const cellId = `${categoryName}-${month}`
-                          const value = getCellValue(categoryName, month)
-                          const isEditing = editingCell === cellId
-                          
-                          return (
-                            <td key={month} className="p-2 text-center">
-                              {isEditing ? (
-                                <Input
-                                  value={editValue}
-                                  onChange={(e) => setEditValue(e.target.value)}
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter') handleCellSave()
-                                    if (e.key === 'Escape') setEditingCell(null)
-                                  }}
-                                  onBlur={handleCellSave}
-                                  className="h-8 text-sm w-full"
-                                  autoFocus
-                                />
-                              ) : (
-                                <button
-                                  onClick={() => handleCellClick(categoryName, month)}
-                                  className="w-full h-8 text-sm hover:bg-slate-100 rounded px-2 transition-colors group"
-                                >
-                                  {value === 0 ? (
-                                    <span className="text-slate-400">−</span>
-                                  ) : (
-                                    <span className="text-red-700 font-medium">{formatCurrency(value)}</span>
-                                  )}
-                                  <Edit3 className="w-3 h-3 ml-1 opacity-0 group-hover:opacity-50 transition-opacity inline" />
-                                </button>
-                              )}
-                            </td>
-                          )
-                        })}
-                        <td className="p-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteCategory(categoryName)}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
+                    <SortableContext
+                      items={getCategoriesByType('expense')}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      {getCategoriesByType('expense').map((categoryName, index) => (
+                        <DraggableCategoryRow
+                          key={categoryName}
+                          categoryName={categoryName}
+                          index={index}
+                          categoryType="expense"
+                          months={months}
+                          editingCell={editingCell}
+                          editValue={editValue}
+                          expandedCategories={expandedCategories}
+                          onCellClick={handleCellClick}
+                          onCellSave={handleCellSave}
+                          onToggleDetails={toggleCategoryDetails}
+                          onDeleteCategory={handleDeleteCategory}
+                          getCellValue={getCellValue}
+                          formatCurrency={formatCurrency}
+                          setEditValue={setEditValue}
+                          setEditingCell={setEditingCell}
+                        />
+                      ))}
+                    </SortableContext>
                   </tbody>
                 </table>
               </div>
@@ -638,6 +849,19 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
           </Card>
         </div>
       </div>
+
+      {/* Drag Overlay */}
+      <DragOverlay>
+        {activeDragId ? (
+          <div className="bg-white border border-slate-200 rounded px-4 py-2 shadow-lg">
+            <div className="flex items-center space-x-2">
+              <GripVertical className="w-4 h-4 text-slate-400" />
+              <span className="font-medium text-slate-700">{activeDragId}</span>
+            </div>
+          </div>
+        ) : null}
+      </DragOverlay>
     </div>
+    </DndContext>
   )
 }
