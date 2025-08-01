@@ -13,6 +13,7 @@ export const SimpleDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'calendar' | 'analytics' | 'projections' | 'data'>('calendar')
   const [editingCell, setEditingCell] = useState<string | null>(null)
   const [editValue, setEditValue] = useState('')
+  const [originalValue, setOriginalValue] = useState('')
   
   const { 
     loading, 
@@ -64,7 +65,9 @@ export const SimpleDashboard: React.FC = () => {
     const cellId = `${categoryName}-${month}`
     setEditingCell(cellId)
     const currentValue = getCellValue(categoryName, month)
-    setEditValue(currentValue.toString())
+    const valueString = currentValue.toString()
+    setEditValue(valueString)
+    setOriginalValue(valueString) // 🔧 Track original value for comparison
   }
 
   const handleCellSave = async () => {
@@ -73,6 +76,16 @@ export const SimpleDashboard: React.FC = () => {
     const [categoryName, monthStr] = editingCell.split('-')
     const month = parseInt(monthStr)
     const value = parseFloat(editValue) || 0
+    const originalValueNum = parseFloat(originalValue) || 0
+
+    // 🔧 Only save if value actually changed
+    if (value === originalValueNum) {
+      // Value unchanged - just close editing mode without saving
+      setEditingCell(null)
+      setEditValue('')
+      setOriginalValue('')
+      return
+    }
 
     try {
       await saveEntry({
@@ -96,6 +109,7 @@ export const SimpleDashboard: React.FC = () => {
     
     setEditingCell(null)
     setEditValue('')
+    setOriginalValue('')
   }
 
   const getCellValue = (categoryName: string, month: number): number => {

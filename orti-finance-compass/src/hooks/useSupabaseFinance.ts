@@ -13,7 +13,7 @@ interface FinanceData {
   projections: { revenues: number; expenses: number }
   combined: { revenues: number; expenses: number }
   entries: any[]
-  categories: { [key: string]: { consolidated: number; projections: number; type: string } }
+  categories: { [key: string]: { consolidated: number; projections: number; type: string; sort_order: number } }
   monthlyData: { [month: number]: { revenues: number; expenses: number } }
   categoryMonthlyData: { [categoryName: string]: { [month: number]: { consolidated: number; projections: number } } }
 }
@@ -38,7 +38,7 @@ export const useSupabaseFinance = (year: number = 2025) => {
     setError(null)
     
     try {
-      // 🔧 Simplified query - first get entries for ORTI categories
+      // 🔧 Simplified query - first get entries for ORTI categories WITH sort_order
       const { data: entries, error: queryError } = await supabase
         .from('entries')
         .select(`
@@ -46,7 +46,7 @@ export const useSupabaseFinance = (year: number = 2025) => {
           subcategories (
             name,
             categories (
-              name, type_id
+              name, type_id, sort_order
             )
           )
         `)
@@ -112,7 +112,12 @@ export const useSupabaseFinance = (year: number = 2025) => {
 
       // Initialize category if not exists
       if (!categories[categoryName]) {
-        categories[categoryName] = { consolidated: 0, projections: 0, type: categoryType }
+        categories[categoryName] = { 
+          consolidated: 0, 
+          projections: 0, 
+          type: categoryType,
+          sort_order: entry.subcategories.categories.sort_order || 999
+        }
       }
 
       // Initialize category monthly data if not exists
@@ -387,6 +392,81 @@ export const useSupabaseFinance = (year: number = 2025) => {
     }
   }, [loadData])
 
+  // ↕️ Update category order
+  const updateCategoryOrder = useCallback(async (categoryName: string, direction: 'up' | 'down') => {
+    try {
+      console.log('↕️ Updating category order:', categoryName, direction)
+      
+      // Get current category data
+      const currentCategory = data.categories[categoryName]
+      if (!currentCategory) {
+        throw new Error(`Categoria '${categoryName}' non trovata`)
+      }
+      
+      // Get all categories of the same type, sorted by sort_order
+      const sameTypeCategories = Object.entries(data.categories)
+        .filter(([_, categoryData]) => categoryData.type === currentCategory.type)
+        .sort((a, b) => a[1].sort_order - b[1].sort_order)
+      
+      // Find current position
+      const currentIndex = sameTypeCategories.findIndex(([name, _]) => name === categoryName)
+      if (currentIndex === -1) {
+        throw new Error('Categoria non trovata nella lista')
+      }
+      
+      // Calculate target position
+      let targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1
+      
+      // Check bounds
+      if (targetIndex < 0 || targetIndex >= sameTypeCategories.length) {
+        console.log('Cannot move beyond bounds')
+        return // Already at the top/bottom
+      }
+      
+      const currentCategoryData = sameTypeCategories[currentIndex]
+      const targetCategoryData = sameTypeCategories[targetIndex]
+      
+      // Swap sort_order values
+      const currentSortOrder = currentCategoryData[1].sort_order
+      const targetSortOrder = targetCategoryData[1].sort_order
+      
+      // Update both categories in database
+      const { error: error1 } = await supabase
+        .from('categories')
+        .update({ sort_order: targetSortOrder })
+        .eq('name', currentCategoryData[0])
+      
+      const { error: error2 } = await supabase
+        .from('categories')
+        .update({ sort_order: currentSortOrder })
+        .eq('name', targetCategoryData[0])
+      
+      if (error1 || error2) {
+        throw new Error(`Errore aggiornamento ordine: ${error1?.message || error2?.message}`)
+      }
+      
+      // Update local state immediately for better UX
+      data.categories[currentCategoryData[0]].sort_order = targetSortOrder
+      data.categories[targetCategoryData[0]].sort_order = currentSortOrder
+      
+      // Reload data to ensure consistency
+      await loadData()
+      
+      toast({
+        title: "✅ Ordine aggiornato",
+        description: `${categoryName} spostata ${direction === 'up' ? 'su' : 'giù'}`
+      })
+      
+    } catch (err: any) {
+      console.error('🚨 UPDATE ORDER ERROR:', err)
+      toast({
+        title: "❌ Errore riordinamento",
+        description: err.message || "Impossibile cambiare l'ordine",
+        variant: "destructive"
+      })
+    }
+  }, [data.categories, loadData])
+
   // 📈 Calculate variance
   const variance = {
     revenues: data.consolidated.revenues - data.projections.revenues,
@@ -578,6 +658,7 @@ export const useSupabaseFinance = (year: number = 2025) => {
     createCategory,
     deleteCategory,
     exportData,
-    importData
+    importData,
+    updateCategoryOrder
   }
 }
