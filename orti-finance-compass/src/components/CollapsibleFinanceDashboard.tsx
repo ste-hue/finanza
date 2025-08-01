@@ -228,6 +228,7 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
   const [selectedYear, setSelectedYear] = useState(2025)
   const [editingCell, setEditingCell] = useState<string | null>(null)
   const [editValue, setEditValue] = useState('')
+  const [originalValue, setOriginalValue] = useState('')
   const [newCategoryName, setNewCategoryName] = useState('')
   const [expandedSections, setExpandedSections] = useState<{ [key: string]: boolean }>({
     'entrate': true,
@@ -308,7 +309,9 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
     const cellId = `${categoryName}-${month}`
     setEditingCell(cellId)
     const currentValue = getCellValue(categoryName, month)
-    setEditValue(currentValue.toString())
+    const valueString = currentValue.toString()
+    setEditValue(valueString)
+    setOriginalValue(valueString) // 🔧 Track original value for comparison
   }
 
   const handleCellSave = async () => {
@@ -317,6 +320,16 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
     const [categoryName, monthStr] = editingCell.split('-')
     const month = parseInt(monthStr)
     const value = parseFloat(editValue) || 0
+    const originalValueNum = parseFloat(originalValue) || 0
+
+    // 🔧 Only save if value actually changed
+    if (value === originalValueNum) {
+      // Value unchanged - just close editing mode without saving
+      setEditingCell(null)
+      setEditValue('')
+      setOriginalValue('')
+      return
+    }
 
     try {
       await saveEntry({
@@ -340,6 +353,7 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
     
     setEditingCell(null)
     setEditValue('')
+    setOriginalValue('')
   }
 
   const getCellValue = (categoryName: string, month: number): number => {
@@ -500,11 +514,11 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
       // Reload data
       await loadData()
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('🚨 DRAG & DROP ERROR:', err)
       toast({
         title: "❌ Errore drag & drop",
-        description: err.message || "Impossibile riordinare",
+        description: (err as Error)?.message || "Impossibile riordinare",
         variant: "destructive"
       })
     }
