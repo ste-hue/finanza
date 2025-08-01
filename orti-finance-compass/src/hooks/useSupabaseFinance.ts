@@ -449,6 +449,106 @@ export const useSupabaseFinance = (year: number = 2025) => {
     loadData()
   }, [loadData])
 
+  // 📤 Export data
+  const exportData = useCallback(async () => {
+    try {
+      // Get all entries for the current year
+      const { data: allEntries, error } = await supabase
+        .from('entries')
+        .select(`
+          id, value, year, month, is_projection, notes,
+          subcategories (
+            name,
+            categories (
+              name, type_id
+            )
+          )
+        `)
+        .eq('year', year)
+        .order('month', { ascending: true })
+
+      if (error) throw error
+
+      // Get categories structure
+      const { data: categoriesData, error: catError } = await supabase
+        .from('categories')
+        .select(`
+          id, name, type_id,
+          subcategories (
+            id, name
+          )
+        `)
+        .eq('company_name', 'ORTI')
+
+      if (catError) throw catError
+
+      return {
+        year,
+        entries: allEntries || [],
+        categories: categoriesData || [],
+        exportDate: new Date().toISOString(),
+        companyName: 'ORTI'
+      }
+    } catch (error) {
+      console.error('Export error:', error)
+      throw error
+    }
+  }, [year])
+
+  // 📥 Import data
+  const importData = useCallback(async (importedData: any) => {
+    try {
+      // Validate data structure
+      if (!importedData.entries || !Array.isArray(importedData.entries)) {
+        throw new Error('Invalid data format')
+      }
+
+      // Delete existing entries for the year
+      const { error: deleteError } = await supabase
+        .from('entries')
+        .delete()
+        .eq('year', importedData.year || year)
+
+      if (deleteError) throw deleteError
+
+      // Import new entries
+      for (const entry of importedData.entries) {
+        // Find or create subcategory
+        const subcategoryName = entry.subcategories?.name
+        const categoryName = entry.subcategories?.categories?.name
+
+        if (subcategoryName && categoryName) {
+          // Get subcategory ID
+          const { data: subcategory } = await supabase
+            .from('subcategories')
+            .select('id')
+            .eq('name', subcategoryName)
+            .single()
+
+          if (subcategory) {
+            // Insert entry
+            await supabase
+              .from('entries')
+              .insert({
+                value: entry.value,
+                year: entry.year,
+                month: entry.month,
+                is_projection: entry.is_projection,
+                notes: entry.notes,
+                subcategory_id: subcategory.id
+              })
+          }
+        }
+      }
+
+      // Reload data
+      await loadData()
+    } catch (error) {
+      console.error('Import error:', error)
+      throw error
+    }
+  }, [year, loadData])
+
   const displayData = getDisplayData()
 
   return {
@@ -476,6 +576,8 @@ export const useSupabaseFinance = (year: number = 2025) => {
     saveEntry,
     setViewMode,
     createCategory,
-    deleteCategory
+    deleteCategory,
+    exportData,
+    importData
   }
 }

@@ -17,6 +17,7 @@ import {
   Calculator
 } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
+import { DataExportImport } from '@/components/DataExportImport'
 
 // 🎯 COLLAPSIBLE FINANCE DASHBOARD - Structured sections with CRUD
 export const CollapsibleFinanceDashboard: React.FC = () => {
@@ -42,7 +43,9 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
     viewMode,
     saveEntry,
     createCategory,
-    deleteCategory
+    deleteCategory,
+    exportData,
+    importData
   } = useSupabaseFinance(selectedYear)
 
   const months = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic']
@@ -277,6 +280,15 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* 📤 EXPORT/IMPORT */}
+        <div className="mb-6">
+          <DataExportImport
+            onExport={exportData}
+            onImport={importData}
+            exportFilename={`orti-finance-${selectedYear}`}
+          />
         </div>
 
         {/* 💰 SEZIONE ENTRATE */}
