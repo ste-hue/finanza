@@ -26,7 +26,11 @@ import {
   BarChart3,
   Menu,
   X,
-  FileJson
+  FileJson,
+  Filter,
+  CheckCircle2,
+  Circle,
+  Clock
 } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
 import { DataExportImportModal } from '@/components/DataExportImportModal'
@@ -250,14 +254,16 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
   const [zenMode, setZenMode] = useState(false)
   const [showCharts, setShowCharts] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [viewFilter, setViewFilter] = useState<'all' | 'consolidated' | 'projections'>('all')
 
-  const { 
+    const {
     loading, 
     error, 
     yearTotals, 
     categoryMonthlyData,
     categories,
     viewMode,
+    setViewMode,
     saveEntry,
     createCategory,
     deleteCategory,
@@ -267,6 +273,17 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
     updateCategoriesOrderOptimistic,
     loadData
   } = useSupabaseFinance(selectedYear)
+
+  // 🔗 Sync viewFilter with viewMode from hook
+  React.useEffect(() => {
+    if (viewFilter === 'all') {
+      setViewMode('combined')
+    } else if (viewFilter === 'consolidated') {
+      setViewMode('consolidated')  
+    } else if (viewFilter === 'projections') {
+      setViewMode('projections')
+    }
+  }, [viewFilter, setViewMode])
 
   // 🌍 Global Supabase client - no more multiple instances!
   // Import moved to top level to use shared singleton
@@ -482,20 +499,81 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
       .map(([name, _]) => name)
   }
 
-  // 🧮 Calculate totals (using memoized categories)
+  // 📅 Determine month status: Date logic + Data logic combined
+  const getMonthStatus = (month: number, year: number = selectedYear) => {
+    const currentDate = new Date()
+    const currentMonth = currentDate.getMonth() + 1 // Agosto = 8
+    const currentYear = currentDate.getFullYear()
+    
+    let hasConsolidated = false
+    let hasProjections = false
+    
+    // Check all categories for this month
+    Object.values(categoryMonthlyData || {}).forEach(categoryData => {
+      const monthData = categoryData[month]
+      if (monthData) {
+        if (monthData.consolidated > 0) hasConsolidated = true
+        if (monthData.projections > 0) hasProjections = true
+      }
+    })
+    
+    // Logic combining date and data:
+    if (year < currentYear) {
+      // Past years: check data
+      return hasConsolidated ? 'consolidated' : 'projections'
+    }
+    
+    if (year > currentYear) {
+      // Future years: always projections
+      return 'projections'
+    }
+    
+    // Current year (2025):
+    if (month === currentMonth) {
+      // Current month (Agosto) = always Attuale
+      return 'current'
+    }
+    
+    if (month < currentMonth) {
+      // Past months (Luglio, Giugno...) - check if still has projections
+      if (hasProjections) {
+        return 'current' // Not yet consolidated = Attuale
+      } else {
+        return 'consolidated' // Fully consolidated
+      }
+    }
+    
+    // Future months (Settembre+) = always projections
+    return 'projections'
+  }
+
+  // 🎯 Always show all months - let values change based on filter
+  const shouldShowMonth = (month: number) => {
+    return true // Show all columns, values will change based on viewMode
+  }
+
+  // 🧮 Calculate totals (respecting current viewMode filter)
   const calculateTotals = () => {
     const entrate = revenueCategories
     const uscite = expenseCategories
     
-    const totaleEntrate = entrate.reduce((sum, cat) => {
-      const categoryData = categories[cat]
-      return sum + (categoryData?.consolidated || 0) + (categoryData?.projections || 0)
-    }, 0)
+    const getTotalForCategory = (categoryName: string) => {
+      const categoryData = categories[categoryName]
+      if (!categoryData) return 0
+      
+      switch (viewMode) {
+        case 'consolidated':
+          return categoryData.consolidated || 0
+        case 'projections':
+          return categoryData.projections || 0
+        case 'combined':
+        default:
+          return (categoryData.consolidated || 0) + (categoryData.projections || 0)
+      }
+    }
     
-    const totaleUscite = uscite.reduce((sum, cat) => {
-      const categoryData = categories[cat]
-      return sum + (categoryData?.consolidated || 0) + (categoryData?.projections || 0)
-    }, 0)
+    const totaleEntrate = entrate.reduce((sum, cat) => sum + getTotalForCategory(cat), 0)
+    const totaleUscite = uscite.reduce((sum, cat) => sum + getTotalForCategory(cat), 0)
     
     return {
       entrate: totaleEntrate,
@@ -630,8 +708,8 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
     setActiveDragId(null)
   }
 
-  // 🧮 Memoize totals calculation to prevent infinite re-renders
-  const totals = useMemo(() => calculateTotals(), [categories])
+  // 🧮 Memoize totals calculation to prevent infinite re-renders (now depends on viewMode)
+  const totals = useMemo(() => calculateTotals(), [categories, viewMode])
 
   if (loading) {
     return (
@@ -714,6 +792,52 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
 
             {/* Control Buttons - Desktop */}
             <div className="hidden md:flex items-center gap-2">
+              {/* 🎯 View Filter Controls */}
+              <div className="flex items-center gap-1 border rounded-lg p-1">
+                <Button
+                  variant={viewFilter === 'all' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewFilter('all')}
+                  className={cn(
+                    "transition-all px-3 py-1 text-xs",
+                    viewFilter === 'all' 
+                      ? darkMode ? "bg-blue-600 text-white" : "bg-blue-600 text-white"
+                      : darkMode ? "text-gray-300 hover:bg-gray-700" : "text-gray-600 hover:bg-gray-100"
+                  )}
+                >
+                  <Filter className="h-3 w-3 mr-1" />
+                  Tutto
+                </Button>
+                <Button
+                  variant={viewFilter === 'consolidated' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewFilter('consolidated')}
+                  className={cn(
+                    "transition-all px-3 py-1 text-xs",
+                    viewFilter === 'consolidated' 
+                      ? darkMode ? "bg-green-600 text-white" : "bg-green-600 text-white"
+                      : darkMode ? "text-gray-300 hover:bg-gray-700" : "text-gray-600 hover:bg-gray-100"
+                  )}
+                >
+                  <CheckCircle2 className="h-3 w-3 mr-1" />
+                  Consolidato
+                </Button>
+                <Button
+                  variant={viewFilter === 'projections' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewFilter('projections')}
+                  className={cn(
+                    "transition-all px-3 py-1 text-xs",
+                    viewFilter === 'projections' 
+                      ? darkMode ? "bg-orange-600 text-white" : "bg-orange-600 text-white"
+                      : darkMode ? "text-gray-300 hover:bg-gray-700" : "text-gray-600 hover:bg-gray-100"
+                  )}
+                >
+                  <Circle className="h-3 w-3 mr-1" />
+                  Previsionale
+                </Button>
+              </div>
+
               <Button
                 variant="outline"
                 size="sm"
@@ -780,6 +904,40 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
           {/* Mobile Menu */}
           {mobileMenuOpen && (
             <div className="md:hidden border-t pt-4 mt-4 space-y-2">
+              {/* 🎯 Mobile View Filter Controls */}
+              <div className="space-y-1">
+                <p className="text-xs text-gray-500 px-2">Filtro Vista:</p>
+                <div className="flex gap-1">
+                  <Button
+                    variant={viewFilter === 'all' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setViewFilter('all')}
+                    className="flex-1 text-xs"
+                  >
+                    <Filter className="h-3 w-3 mr-1" />
+                    Tutto
+                  </Button>
+                  <Button
+                    variant={viewFilter === 'consolidated' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setViewFilter('consolidated')}
+                    className="flex-1 text-xs"
+                  >
+                    <CheckCircle2 className="h-3 w-3 mr-1" />
+                    Consolidato
+                  </Button>
+                  <Button
+                    variant={viewFilter === 'projections' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setViewFilter('projections')}
+                    className="flex-1 text-xs"
+                  >
+                    <Circle className="h-3 w-3 mr-1" />
+                    Previsionale
+                  </Button>
+                </div>
+              </div>
+
               <Button
                 variant="outline"
                 size="sm"
@@ -1082,15 +1240,51 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
                       )}>
                         Categoria
                       </th>
-                      {months.map((month) => (
-                        <th key={month} className={cn(
-                          "text-center p-2 font-medium min-w-[70px] md:min-w-[80px]",
-                          darkMode ? "text-gray-300" : "text-slate-700"
-                        )}>
-                          <span className="hidden md:inline">{month}</span>
-                          <span className="md:hidden">{month.slice(0, 1)}</span>
-                        </th>
-                      ))}
+                      {months.map((month, monthIndex) => {
+                        const monthNumber = monthIndex + 1
+                        const monthStatus = getMonthStatus(monthNumber)
+                        const shouldShow = shouldShowMonth(monthNumber)
+                        
+                        if (!shouldShow) return null
+                        
+                        return (
+                          <th key={month} className={cn(
+                            "text-center p-2 font-medium min-w-[70px] md:min-w-[80px] relative",
+                            darkMode ? "text-gray-300" : "text-slate-700"
+                          )}>
+                            <div className="flex flex-col items-center gap-1">
+                              <div className="flex items-center gap-1">
+                                <span className="hidden md:inline">{month}</span>
+                                <span className="md:hidden">{month.slice(0, 1)}</span>
+                                {/* 📅 Status Indicator */}
+                                {monthStatus === 'consolidated' && (
+                                  <CheckCircle2 className="h-3 w-3 text-green-500" title="Consolidato" />
+                                )}
+                                {monthStatus === 'projections' && (
+                                  <Circle className="h-3 w-3 text-orange-500" title="Previsionale" />
+                                )}
+                                {monthStatus === 'current' && (
+                                  <Clock className="h-3 w-3 text-blue-500" title="Mese corrente" />
+                                )}
+                              </div>
+                              {/* Status Badge for better visibility */}
+                              {viewFilter === 'all' && (
+                                <div className={cn(
+                                  "text-[8px] px-1 rounded-full font-medium",
+                                  monthStatus === 'consolidated' 
+                                    ? "bg-green-100 text-green-700" 
+                                    : monthStatus === 'projections'
+                                    ? "bg-orange-100 text-orange-700"
+                                    : "bg-blue-100 text-blue-700"
+                                )}>
+                                  {monthStatus === 'consolidated' ? 'C' : 
+                                   monthStatus === 'projections' ? 'P' : 'A'}
+                                </div>
+                              )}
+                            </div>
+                          </th>
+                        )
+                      })}
                       {!zenMode && <th className="w-16 md:w-20"></th>}
                     </tr>
                   </thead>
@@ -1226,15 +1420,51 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
                       )}>
                         Categoria
                       </th>
-                      {months.map((month) => (
-                        <th key={month} className={cn(
-                          "text-center p-2 font-medium min-w-[70px] md:min-w-[80px]",
-                          darkMode ? "text-gray-300" : "text-slate-700"
-                        )}>
-                          <span className="hidden md:inline">{month}</span>
-                          <span className="md:hidden">{month.slice(0, 1)}</span>
-                        </th>
-                      ))}
+                      {months.map((month, monthIndex) => {
+                        const monthNumber = monthIndex + 1
+                        const monthStatus = getMonthStatus(monthNumber)
+                        const shouldShow = shouldShowMonth(monthNumber)
+                        
+                        if (!shouldShow) return null
+                        
+                        return (
+                          <th key={month} className={cn(
+                            "text-center p-2 font-medium min-w-[70px] md:min-w-[80px] relative",
+                            darkMode ? "text-gray-300" : "text-slate-700"
+                          )}>
+                            <div className="flex flex-col items-center gap-1">
+                              <div className="flex items-center gap-1">
+                                <span className="hidden md:inline">{month}</span>
+                                <span className="md:hidden">{month.slice(0, 1)}</span>
+                                {/* 📅 Status Indicator */}
+                                {monthStatus === 'consolidated' && (
+                                  <CheckCircle2 className="h-3 w-3 text-green-500" title="Consolidato" />
+                                )}
+                                {monthStatus === 'projections' && (
+                                  <Circle className="h-3 w-3 text-orange-500" title="Previsionale" />
+                                )}
+                                {monthStatus === 'current' && (
+                                  <Clock className="h-3 w-3 text-blue-500" title="Mese corrente" />
+                                )}
+                              </div>
+                              {/* Status Badge for better visibility */}
+                              {viewFilter === 'all' && (
+                                <div className={cn(
+                                  "text-[8px] px-1 rounded-full font-medium",
+                                  monthStatus === 'consolidated' 
+                                    ? "bg-green-100 text-green-700" 
+                                    : monthStatus === 'projections'
+                                    ? "bg-orange-100 text-orange-700"
+                                    : "bg-blue-100 text-blue-700"
+                                )}>
+                                  {monthStatus === 'consolidated' ? 'C' : 
+                                   monthStatus === 'projections' ? 'P' : 'A'}
+                                </div>
+                              )}
+                            </div>
+                          </th>
+                        )
+                      })}
                       {!zenMode && <th className="w-16 md:w-20"></th>}
                     </tr>
                   </thead>
@@ -1719,6 +1949,109 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* 📚 LEGENDA - Spiegazione simboli e colori */}
+        {!zenMode && (
+          <Card className={cn(
+            "mx-4 md:mx-6 mb-4 md:mb-6 transition-all duration-300",
+            darkMode ? "bg-gray-800 border-gray-700" : "bg-slate-50 border-slate-200"
+          )}>
+            <CardContent className="pt-4">
+              <div className="space-y-3">
+                <h3 className={cn(
+                  "text-sm font-semibold mb-3 flex items-center gap-2",
+                  darkMode ? "text-gray-300" : "text-slate-700"
+                )}>
+                  <Target className="h-4 w-4" />
+                  Legenda Filtri e Indicatori
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
+                  {/* Filtri Vista */}
+                  <div>
+                    <p className={cn("font-medium mb-2", darkMode ? "text-gray-300" : "text-slate-700")}>
+                      🎯 Filtri Vista:
+                    </p>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <Filter className="h-3 w-3 text-blue-500" />
+                        <span className={darkMode ? "text-gray-400" : "text-slate-600"}>
+                          Tutto - Mostra consolidato + previsionale
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="h-3 w-3 text-green-500" />
+                        <span className={darkMode ? "text-gray-400" : "text-slate-600"}>
+                          Consolidato - Solo dati reali/storici
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Circle className="h-3 w-3 text-orange-500" />
+                        <span className={darkMode ? "text-gray-400" : "text-slate-600"}>
+                          Previsionale - Solo proiezioni/forecast
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Indicatori Mesi */}
+                  <div>
+                    <p className={cn("font-medium mb-2", darkMode ? "text-gray-300" : "text-slate-700")}>
+                      📅 Stato Mesi:
+                    </p>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="h-3 w-3 text-green-500" />
+                        <span className="bg-green-100 text-green-700 px-1 rounded text-[8px] font-medium">C</span>
+                        <span className={darkMode ? "text-gray-400" : "text-slate-600"}>
+                          Consolidato (mesi passati)
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-3 w-3 text-blue-500" />
+                        <span className="bg-blue-100 text-blue-700 px-1 rounded text-[8px] font-medium">A</span>
+                        <span className={darkMode ? "text-gray-400" : "text-slate-600"}>
+                          Attuale (mese corrente + passati non consolidati)
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Circle className="h-3 w-3 text-orange-500" />
+                        <span className="bg-orange-100 text-orange-700 px-1 rounded text-[8px] font-medium">P</span>
+                        <span className={darkMode ? "text-gray-400" : "text-slate-600"}>
+                          Previsionale (mesi futuri)
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Colori Categorie */}
+                  <div>
+                    <p className={cn("font-medium mb-2", darkMode ? "text-gray-300" : "text-slate-700")}>
+                      🎨 Colori Categorie:
+                    </p>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className="h-3 w-3 text-green-500" />
+                        <span className={darkMode ? "text-green-400" : "text-green-700"}>Verde</span>
+                        <span className={darkMode ? "text-gray-400" : "text-slate-600"}>- Entrate</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <TrendingDown className="h-3 w-3 text-red-500" />
+                        <span className={darkMode ? "text-red-400" : "text-red-700"}>Rosso</span>
+                        <span className={darkMode ? "text-gray-400" : "text-slate-600"}>- Uscite</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Banknote className="h-3 w-3 text-purple-500" />
+                        <span className={darkMode ? "text-purple-400" : "text-purple-700"}>Viola</span>
+                        <span className={darkMode ? "text-gray-400" : "text-slate-600"}>- Saldi Bancari</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Drag Overlay */}
