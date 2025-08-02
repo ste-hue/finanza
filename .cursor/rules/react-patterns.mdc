@@ -1,0 +1,47 @@
+---
+alwaysApply: true
+---
+
+# React Development Patterns for ORTI Finance
+
+## State Management
+Always memoize expensive calculations and add viewMode to dependencies:
+```typescript
+const totals = useMemo(() => calculateTotals(), [categories, viewMode])
+```
+
+## Supabase Integration Pattern
+```typescript
+// 1. Optimistic update (immediate UI)
+setEntries(prev => [...prev, optimisticEntry])
+
+// 2. Database save  
+try {
+  const result = await supabase.from('entries').insert(data)
+  setEntries(prev => prev.map(e => e.id === optimistic.id ? result : e))
+} catch (error) {
+  // 3. Rollback on error
+  setEntries(prev => prev.filter(e => e.id !== optimistic.id))
+  toast.error('Save failed')
+}
+```
+
+## Real-time Subscriptions  
+Always clean up subscriptions:
+```typescript
+useEffect(() => {
+  const subscription = supabase
+    .channel('entries-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'entries' }, loadData)
+    .subscribe()
+    
+  return () => subscription.unsubscribe()
+}, [loadData])
+```
+
+## Responsive Design
+Mobile-first approach:
+```typescript
+<span className="hidden md:inline">{fullText}</span>
+<span className="md:hidden">{abbreviatedText}</span>
+```

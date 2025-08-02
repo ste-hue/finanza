@@ -372,11 +372,19 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
     }
 
     try {
+      // 🎯 Intelligent projection detection
+      const currentMonth = new Date().getMonth() + 1
+      const currentYear = new Date().getFullYear()
+      
+      // Logic: future months = projections, past/current = consolidated
+      const isProjection = (selectedYear > currentYear) || 
+                          (selectedYear === currentYear && month > currentMonth)
+      
       await saveEntry({
         categoryName: categoryName,
         month,
         value,
-        isProjection: false
+        isProjection
       })
       
       toast({

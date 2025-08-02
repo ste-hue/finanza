@@ -1,0 +1,35 @@
+---
+alwaysApply: true
+---
+
+# Financial Business Logic Rules
+
+## ViewMode Filter System
+CRITICAL: All financial calculations MUST respect the active viewMode filter:
+
+```typescript
+const calculateTotals = () => {
+  const getTotalForCategory = (category: string) => {
+    switch (viewMode) {
+      case 'consolidated': return categoryData.consolidated || 0
+      case 'projections': return categoryData.projections || 0  
+      case 'combined': return (consolidated + projections)
+    }
+  }
+}
+```
+
+## Color System - NEVER deviate
+- Green: Revenues/Income (`text-green-400` dark, `text-green-700` light)
+- Red: Expenses/Costs (`text-red-400` dark, `text-red-700` light)  
+- Purple: Bank Balances (`text-purple-400` dark, `text-purple-700` light)
+
+## Financial Calculations
+- TOTALE ENTRATE/USCITE must change based on filter selection
+- CASH FLOW = TOTALE BANCHE + (Entrate - Uscite)
+- DIFFERENZA = Entrate - Uscite (green if positive, red if negative)
+
+## Data Import Rules  
+- Excel imports default to `is_projection: true`
+- Only manually mark as consolidated when data is verified
+- Always validate Revenue - Expenses = Difference
