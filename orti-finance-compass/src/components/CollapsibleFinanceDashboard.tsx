@@ -52,7 +52,7 @@ import { CSS } from '@dnd-kit/utilities'
 const DraggableCategoryRow: React.FC<{
   categoryName: string
   index: number
-  categoryType: 'revenue' | 'expense'
+  categoryType: 'revenue' | 'expense' | 'balance'
   months: string[]
   editingCell: string | null
   editValue: string
@@ -103,9 +103,13 @@ const DraggableCategoryRow: React.FC<{
 
   const colorClass = categoryType === 'revenue' 
     ? (darkMode ? 'text-green-400' : 'text-green-700')
+    : categoryType === 'balance'
+    ? (darkMode ? 'text-purple-400' : 'text-purple-700')
     : (darkMode ? 'text-red-400' : 'text-red-700')
   const bgColorClass = categoryType === 'revenue' 
     ? (darkMode ? 'hover:bg-green-900/30' : 'hover:bg-green-50')
+    : categoryType === 'balance'
+    ? (darkMode ? 'hover:bg-purple-900/30' : 'hover:bg-purple-50')
     : (darkMode ? 'hover:bg-red-900/30' : 'hover:bg-red-50')
 
   return (
@@ -282,6 +286,22 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
   const formatCurrency = (value: number) => 
     value === 0 ? '−' : new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0 }).format(value)
 
+  // 💰 Format currency compact (for non-zen mode)
+  const formatCurrencyCompact = (value: number) => {
+    if (value === 0) return '−'
+    
+    const absValue = Math.abs(value)
+    const sign = value < 0 ? '-' : ''
+    
+    if (absValue >= 1000000) {
+      return `${sign}${(absValue / 1000000).toFixed(1)}M€`
+    } else if (absValue >= 1000) {
+      return `${sign}${(absValue / 1000).toFixed(0)}k€`
+    } else {
+      return `${sign}${absValue.toFixed(0)}€`
+    }
+  }
+
   // 🔄 Toggle section expansion
   const toggleSection = (sectionKey: string) => {
     setExpandedSections(prev => ({
@@ -375,7 +395,7 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
   }
 
   // ➕ Add new category
-  const handleAddCategory = async (type: 'revenue' | 'expense') => {
+  const handleAddCategory = async (type: 'revenue' | 'expense' | 'balance') => {
     if (!newCategoryName.trim()) {
       toast({
         title: "❌ Nome richiesto",
@@ -434,10 +454,21 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
       .map(([name, _]) => name)
   }, [categories])
 
+  const balanceCategories = useMemo(() => {
+    return Object.entries(categories)
+      .filter(([name, data]) => {
+        const categoryType = data.type
+        return categoryType === 'balance'
+      })
+      .sort((a, b) => a[1].sort_order - b[1].sort_order)
+      .map(([name, _]) => name)
+  }, [categories])
+
   // Legacy function for backward compatibility
   const getCategoriesByType = (type: string) => {
     if (type === 'revenue') return revenueCategories
     if (type === 'expense') return expenseCategories
+    if (type === 'balance') return balanceCategories
     // Fallback for other types
     return Object.entries(categories)
       .filter(([name, data]) => {
@@ -1317,7 +1348,7 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
                           ? darkMode ? "text-green-400" : "text-green-600"
                           : darkMode ? "text-red-400" : "text-red-600"
                       )}>
-                        {formatCurrency(diffMonth)}
+                        {zenMode ? formatCurrency(diffMonth) : formatCurrencyCompact(diffMonth)}
                       </div>
                     </div>
                   )
@@ -1435,7 +1466,128 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
           </Card>
         )}
 
-        {/* 🏦 TOTALE BANCHE & CASH FLOW */}
+        {/* 🏦 SALDI BANCARI - Sezione dinamica */}
+        <Card className={cn(
+          "mb-4 md:mb-6 transition-all duration-300",
+          darkMode ? "bg-gray-800 border-gray-700" : ""
+        )}>
+          <CardHeader 
+            className={cn(
+              "cursor-pointer transition-all duration-300",
+              darkMode ? "bg-purple-900/20 hover:bg-purple-900/30" : "bg-purple-50 hover:bg-purple-100"
+            )}
+            onClick={() => toggleSection('banche')}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <Banknote className={cn(
+                  "w-6 h-6 transition-transform duration-200",
+                  darkMode ? "text-purple-400" : "text-purple-600"
+                )} />
+                <div>
+                  <h3 className={cn(
+                    "text-base md:text-lg font-semibold",
+                    darkMode ? "text-purple-300" : "text-purple-700"
+                  )}>
+                    🏦 SALDI BANCARI
+                  </h3>
+                  <div className={cn(
+                    "text-sm",
+                    darkMode ? "text-purple-400" : "text-purple-600"
+                  )}>
+                    {balanceCategories.filter(cat => cat.includes('Saldo')).length} conti bancari • Totale: {formatCurrency(
+                      balanceCategories.filter(cat => cat.includes('Saldo') && !cat.includes('Totale')).reduce((sum, cat) => {
+                        const categoryData = categories[cat]
+                        return sum + (categoryData?.consolidated || 0) + (categoryData?.projections || 0)
+                      }, 0)
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleAddCategory('balance')
+                  }}
+                  className={cn(
+                    "transition-all duration-200",
+                    darkMode ? "hover:bg-purple-800/50 text-purple-400" : "hover:bg-purple-200 text-purple-600"
+                  )}
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
+                <ChevronDown className={cn(
+                  "w-5 h-5 transition-transform duration-200",
+                  expandedSections.banche ? "transform rotate-180" : "",
+                  darkMode ? "text-purple-400" : "text-purple-600"
+                )} />
+              </div>
+            </div>
+          </CardHeader>
+          
+          <div className={cn(
+            "transition-all duration-500 ease-in-out",
+            expandedSections.banche ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0 overflow-hidden"
+          )}>
+            <CardContent>
+              {balanceCategories.filter(cat => cat.includes('Saldo') && !cat.includes('Totale')).length > 0 ? (
+                <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+                  <SortableContext 
+                    items={balanceCategories.filter(cat => cat.includes('Saldo') && !cat.includes('Totale'))} 
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div className="space-y-1">
+                      {balanceCategories.filter(cat => cat.includes('Saldo') && !cat.includes('Totale')).map((categoryName, index) => (
+                        <DraggableCategoryRow
+                          key={categoryName}
+                          categoryName={categoryName}
+                          index={index}
+                          categoryType="balance" // Correct type for balance categories with purple colors
+                          months={months}
+                          editingCell={editingCell}
+                          editValue={editValue}
+                          expandedCategories={expandedCategories}
+                          darkMode={darkMode}
+                          zenMode={zenMode}
+                          onCellClick={handleCellClick}
+                          onCellSave={handleCellSave}
+                          onToggleDetails={(cat) => setExpandedCategories(prev => ({ ...prev, [cat]: !prev[cat] }))}
+                          onDeleteCategory={handleDeleteCategory}
+                          getCellValue={getCellValue}
+                          formatCurrency={formatCurrency}
+                          setEditValue={setEditValue}
+                          setEditingCell={setEditingCell}
+                        />
+                      ))}
+                    </div>
+                  </SortableContext>
+                </DndContext>
+              ) : (
+                <div className={cn(
+                  "text-center py-8",
+                  darkMode ? "text-gray-400" : "text-gray-500"
+                )}>
+                  <Banknote className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                  <p>Nessun conto bancario trovato</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleAddCategory('balance')}
+                    className="mt-3"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Aggiungi Conto
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </div>
+        </Card>
+
+        {/* 🏦 TOTALI E CASH FLOW */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-4 md:mb-6">
           <Card className={cn(
             "transition-all duration-300",
@@ -1461,33 +1613,38 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
                     "text-sm",
                     darkMode ? "text-purple-400" : "text-purple-600"
                   )}>
-                    Saldi bancari consolidati
+                    Mese per mese
                   </div>
                 </div>
               </div>
             </CardHeader>
-            <CardContent className={cn(
-              "space-y-3",
-              darkMode ? "text-gray-300" : ""
-            )}>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">Saldo MPS:</span>
-                  <span className="font-medium">€0</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">Saldo Intesa:</span>
-                  <span className="font-medium">€0</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">Saldo Banca Sella:</span>
-                  <span className="font-medium">€0</span>
-                </div>
-                <hr className={darkMode ? "border-gray-700" : ""} />
-                <div className="flex justify-between items-center font-semibold text-base md:text-lg">
-                  <span>Totale:</span>
-                  <span className={darkMode ? "text-purple-400" : "text-purple-600"}>€0</span>
-                </div>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2 md:gap-3">
+                {months.map((month, index) => {
+                  const totaleBanche = balanceCategories.filter(cat => cat.includes('Saldo') && !cat.includes('Totale')).reduce((sum, cat) => {
+                    return sum + getCellValue(cat, index + 1)
+                  }, 0)
+                  
+                  return (
+                    <div key={month} className={cn(
+                      "p-2 md:p-3 rounded-lg text-center transition-all duration-300 hover:scale-105",
+                      darkMode ? "bg-gray-700" : "bg-purple-50"
+                    )}>
+                      <div className={cn(
+                        "text-xs md:text-sm mb-1",
+                        darkMode ? "text-gray-400" : "text-purple-600"
+                      )}>
+                        {month}
+                      </div>
+                      <div className={cn(
+                        "text-sm md:text-base font-semibold",
+                        darkMode ? "text-purple-400" : "text-purple-600"
+                      )}>
+                        {zenMode ? formatCurrency(totaleBanche) : formatCurrencyCompact(totaleBanche)}
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </CardContent>
           </Card>
@@ -1516,46 +1673,48 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
                     "text-sm",
                     darkMode ? "text-indigo-400" : "text-indigo-600"
                   )}>
-                    Flusso di cassa
+                    Mese per mese
                   </div>
                 </div>
               </div>
             </CardHeader>
-            <CardContent className={cn(
-              "space-y-3",
-              darkMode ? "text-gray-300" : ""
-            )}>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">Cassa Contanti:</span>
-                  <span className="font-medium">€0</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">Cash Flow:</span>
-                  <span className={cn(
-                    "font-medium",
-                    totals.differenza >= 0 
-                      ? darkMode ? "text-green-400" : "text-green-600"
-                      : darkMode ? "text-red-400" : "text-red-600"
-                  )}>
-                    {formatCurrency(totals.differenza)}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">Totale Affidamenti:</span>
-                  <span className="font-medium">€0</span>
-                </div>
-                <hr className={darkMode ? "border-gray-700" : ""} />
-                <div className="flex justify-between items-center font-semibold text-base md:text-lg">
-                  <span>Cash Flow con Affid.:</span>
-                  <span className={cn(
-                    totals.differenza >= 0 
-                      ? darkMode ? "text-green-400" : "text-green-600"
-                      : darkMode ? "text-red-400" : "text-red-600"
-                  )}>
-                    {formatCurrency(totals.differenza)}
-                  </span>
-                </div>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2 md:gap-3">
+                {months.map((month, index) => {
+                  const entrateMonth = getCategoriesByType('revenue').reduce((sum, cat) => {
+                    return sum + getCellValue(cat, index + 1)
+                  }, 0)
+                  const usciteMonth = getCategoriesByType('expense').reduce((sum, cat) => {
+                    return sum + getCellValue(cat, index + 1)
+                  }, 0)
+                  const totaleBanche = balanceCategories.filter(cat => cat.includes('Saldo') && !cat.includes('Totale')).reduce((sum, cat) => {
+                    return sum + getCellValue(cat, index + 1)
+                  }, 0)
+                  const diffMonth = entrateMonth - usciteMonth
+                  const cashFlow = totaleBanche + diffMonth
+                  
+                  return (
+                    <div key={month} className={cn(
+                      "p-2 md:p-3 rounded-lg text-center transition-all duration-300 hover:scale-105",
+                      darkMode ? "bg-gray-700" : "bg-indigo-50"
+                    )}>
+                      <div className={cn(
+                        "text-xs md:text-sm mb-1",
+                        darkMode ? "text-gray-400" : "text-indigo-600"
+                      )}>
+                        {month}
+                      </div>
+                      <div className={cn(
+                        "text-sm md:text-base font-semibold",
+                        cashFlow >= 0 
+                          ? darkMode ? "text-green-400" : "text-green-600"
+                          : darkMode ? "text-red-400" : "text-red-600"
+                      )}>
+                        {zenMode ? formatCurrency(cashFlow) : formatCurrencyCompact(cashFlow)}
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </CardContent>
           </Card>
