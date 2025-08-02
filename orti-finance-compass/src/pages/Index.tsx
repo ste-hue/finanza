@@ -1,8 +1,8 @@
 import React from 'react';
-import { CollapsibleFinanceDashboard } from '@/components/CollapsibleFinanceDashboard';
+import { FinanceDashboard } from '@/components/FinanceDashboard';
 
 const Index = () => {
-  return <CollapsibleFinanceDashboard />;
+  return <FinanceDashboard />;
 };
 
 export default Index;
