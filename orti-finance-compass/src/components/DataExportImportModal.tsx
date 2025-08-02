@@ -28,6 +28,7 @@ interface DataExportImportModalProps {
   exportFilename?: string;
   darkMode?: boolean;
   trigger?: React.ReactNode;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export const DataExportImportModal: React.FC<DataExportImportModalProps> = ({
@@ -35,13 +36,20 @@ export const DataExportImportModal: React.FC<DataExportImportModalProps> = ({
   onImport,
   exportFilename = 'orti-finance-data',
   darkMode = false,
-  trigger
+  trigger,
+  onOpenChange
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importing, setImporting] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [importPreview, setImportPreview] = useState<any>(null);
   const [isOpen, setIsOpen] = useState(false);
+  
+  React.useEffect(() => {
+    if (onOpenChange) {
+      onOpenChange(isOpen);
+    }
+  }, [isOpen, onOpenChange]);
 
   const handleExport = async () => {
     try {

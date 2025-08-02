@@ -288,7 +288,7 @@ export const AdvancedVarianceAnalysis: React.FC<AdvancedVarianceAnalysisProps> =
                   <SelectItem value="all">Tutte le variance</SelectItem>
                   <SelectItem value="positive">Solo positive</SelectItem>
                   <SelectItem value="negative">Solo negative</SelectItem>
-                  <SelectItem value="significant">Solo significative (>10%)</SelectItem>
+                  <SelectItem value="significant">Solo significative (&gt;10%)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
