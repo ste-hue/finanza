@@ -34,6 +34,10 @@ import {
 } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
 import { DataExportImportModal } from '@/components/DataExportImportModal'
+import { MobileBottomNav } from '@/components/MobileBottomNav'
+import { MobileDataCard } from '@/components/MobileDataCard'
+import { MobileChart } from '@/components/MobileChart'
+import { useSwipeGesture } from '@/hooks/useSwipeGesture'
 import { cn } from '@/lib/utils'
 import {
   DndContext,
@@ -130,8 +134,8 @@ const DraggableCategoryRow: React.FC<{
       )}
     >
       <td className={cn(
-        "p-3 font-medium sticky left-0 z-10",
-        darkMode ? "text-gray-200 bg-gray-800" : "text-slate-700 bg-white"
+        "p-3 font-medium sticky left-0 z-10 min-w-[120px] md:min-w-[160px]",
+        darkMode ? "text-gray-200 bg-gray-800 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.3)]" : "text-slate-700 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]"
       )}>
         <div className="flex items-center space-x-2">
           {/* Drag Handle */}
@@ -184,7 +188,7 @@ const DraggableCategoryRow: React.FC<{
                 }}
                 onBlur={onCellSave}
                 className={cn(
-                  "h-7 md:h-8 text-xs md:text-sm w-full",
+                  "h-9 md:h-8 text-xs md:text-sm w-full",
                   darkMode && "bg-gray-700 border-gray-600"
                 )}
                 autoFocus
@@ -193,7 +197,7 @@ const DraggableCategoryRow: React.FC<{
               <button
                 onClick={() => onCellClick(categoryName, month)}
                 className={cn(
-                  "w-full h-7 md:h-8 text-xs md:text-sm rounded px-1 md:px-2 transition-all group",
+                  "w-full min-h-[36px] md:h-8 text-xs md:text-sm rounded px-1 md:px-2 transition-all group touch-manipulation",
                   darkMode ? "hover:bg-gray-700" : "hover:bg-slate-100",
                   value > 0 && "font-medium"
                 )}
@@ -255,6 +259,13 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
   const [showCharts, setShowCharts] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [viewFilter, setViewFilter] = useState<'all' | 'consolidated' | 'projections'>('all')
+  const [showMobileExportModal, setShowMobileExportModal] = useState(false)
+  
+  // Refs for scroll navigation
+  const headerRef = React.useRef<HTMLDivElement>(null)
+  const entrateRef = React.useRef<HTMLDivElement>(null)
+  const usciteRef = React.useRef<HTMLDivElement>(null)
+  const differenzaRef = React.useRef<HTMLDivElement>(null)
 
     const {
     loading, 
@@ -710,6 +721,49 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
 
   // 🧮 Memoize totals calculation to prevent infinite re-renders (now depends on viewMode)
   const totals = useMemo(() => calculateTotals(), [categories, viewMode])
+  
+  // Handle scroll to section
+  const handleScrollToSection = (section: 'entrate' | 'uscite' | 'differenza' | 'home') => {
+    const refs = {
+      home: headerRef,
+      entrate: entrateRef,
+      uscite: usciteRef,
+      differenza: differenzaRef
+    }
+    
+    const targetRef = refs[section]
+    if (targetRef?.current) {
+      const yOffset = -80 // Account for fixed header/nav
+      const element = targetRef.current
+      const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset
+      
+      window.scrollTo({ top: y, behavior: 'smooth' })
+    }
+  }
+  
+  // Swipe navigation between sections
+  const sections = ['home', 'entrate', 'uscite', 'differenza'] as const
+  const [currentSectionIndex, setCurrentSectionIndex] = React.useState(0)
+  
+  useSwipeGesture({
+    onSwipeLeft: () => {
+      if (currentSectionIndex < sections.length - 1) {
+        const nextSection = sections[currentSectionIndex + 1]
+        handleScrollToSection(nextSection)
+        setCurrentSectionIndex(currentSectionIndex + 1)
+      }
+    },
+    onSwipeRight: () => {
+      if (currentSectionIndex > 0) {
+        const prevSection = sections[currentSectionIndex - 1]
+        handleScrollToSection(prevSection)
+        setCurrentSectionIndex(currentSectionIndex - 1)
+      }
+    }
+  }, {
+    threshold: 75,
+    timeout: 300
+  })
 
   if (loading) {
     return (
@@ -756,15 +810,16 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
       <div className={cn(
         "min-h-screen transition-all duration-300",
         darkMode ? "bg-gray-900" : "bg-slate-50",
-        zenMode && "p-2 md:p-4"
+        zenMode && "p-2 md:p-4",
+        !zenMode && "pb-20 md:pb-0" // Add padding for mobile bottom nav
       )}>
         <div className={cn(
           "mx-auto transition-all duration-300",
           zenMode ? "max-w-full" : "max-w-7xl p-4 md:p-6"
         )}>
-          {/* 📊 HEADER - Responsive & Enhanced */}
-          {!zenMode && (
-          <div className={cn(
+                  {/* 📊 HEADER - Responsive & Enhanced */}
+        {!zenMode && (
+          <div ref={headerRef} className={cn(
             "rounded-lg border p-4 md:p-6 mb-4 md:mb-6 transition-all duration-300",
             darkMode ? "bg-gray-800 border-gray-700" : "bg-white border-slate-200"
           )}>
@@ -1039,9 +1094,37 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* Quick Totals - Responsive Grid */}
+          {/* Mobile Summary Cards - Only on mobile */}
           {!zenMode && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+            <div className="md:hidden grid grid-cols-2 gap-3 mb-4">
+              <MobileDataCard
+                title="Entrate"
+                value={totals.entrate}
+                type="revenue"
+                darkMode={darkMode}
+                onClick={() => handleScrollToSection('entrate')}
+              />
+              <MobileDataCard
+                title="Uscite"
+                value={totals.uscite}
+                type="expense"
+                darkMode={darkMode}
+                onClick={() => handleScrollToSection('uscite')}
+              />
+              <MobileDataCard
+                title="Differenza"
+                value={totals.differenza}
+                type={totals.differenza >= 0 ? 'revenue' : 'expense'}
+                darkMode={darkMode}
+                onClick={() => handleScrollToSection('differenza')}
+                className="col-span-2"
+              />
+            </div>
+          )}
+
+          {/* Quick Totals - Responsive Grid (Desktop) */}
+          {!zenMode && (
+            <div className="hidden md:grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
               <div className={cn(
                 "text-center p-4 rounded-lg transition-all duration-300 hover:scale-105",
                 darkMode ? "bg-green-900/30 hover:bg-green-900/40" : "bg-green-50 hover:bg-green-100"
@@ -1144,7 +1227,7 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
 
 
         {/* 💰 SEZIONE ENTRATE */}
-        <Card className={cn(
+        <Card ref={entrateRef} className={cn(
           "mb-4 md:mb-6 transition-all duration-300 overflow-hidden",
           darkMode ? "bg-gray-800 border-gray-700" : "",
           zenMode && "shadow-sm border-0"
@@ -1227,8 +1310,8 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
             expandedSections.entrate ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0 overflow-hidden"
           )}>
             <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <table className="w-full">
+              <div className="overflow-x-auto touch-scroll relative">
+                <table className="w-full table-fixed md:table-auto">
                   <thead>
                     <tr className={cn(
                       "border-b",
@@ -1324,7 +1407,7 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
         </Card>
 
         {/* 💸 SEZIONE USCITE */}
-        <Card className={cn(
+        <Card ref={usciteRef} className={cn(
           "mb-4 md:mb-6 transition-all duration-300 overflow-hidden",
           darkMode ? "bg-gray-800 border-gray-700" : "",
           zenMode && "shadow-sm border-0"
@@ -1407,8 +1490,8 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
             expandedSections.uscite ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0 overflow-hidden"
           )}>
             <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <table className="w-full">
+              <div className="overflow-x-auto touch-scroll relative">
+                <table className="w-full table-fixed md:table-auto">
                   <thead>
                     <tr className={cn(
                       "border-b",
@@ -1504,7 +1587,7 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
         </Card>
 
         {/* ⚖️ DIFFERENZA */}
-        <Card className={cn(
+        <Card ref={differenzaRef} className={cn(
           "mb-4 md:mb-6 transition-all duration-300 overflow-hidden",
           darkMode ? "bg-gray-800 border-gray-700" : "",
           zenMode && "shadow-sm border-0"
@@ -1609,7 +1692,24 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-6">
+              {/* Mobile Chart */}
+              <div className="md:hidden">
+                <MobileChart
+                  data={months.map((month, index) => ({
+                    month,
+                    entrate: getCategoriesByType('revenue').reduce((sum, cat) => {
+                      return sum + getCellValue(cat, index + 1)
+                    }, 0),
+                    uscite: getCategoriesByType('expense').reduce((sum, cat) => {
+                      return sum + getCellValue(cat, index + 1)
+                    }, 0)
+                  }))}
+                  darkMode={darkMode}
+                />
+              </div>
+              
+              {/* Desktop Chart */}
+              <div className="hidden md:block space-y-6">
                 {/* Grafico a barre semplice */}
                 <div>
                   <h3 className={cn(
@@ -2065,6 +2165,29 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
           </div>
         ) : null}
       </DragOverlay>
+      
+      {/* Mobile Bottom Navigation */}
+      {!zenMode && (
+        <MobileBottomNav
+          onScrollToSection={handleScrollToSection}
+          onToggleCharts={() => setShowCharts(!showCharts)}
+          onToggleMenu={() => setMobileMenuOpen(!mobileMenuOpen)}
+          onExportImport={() => setShowMobileExportModal(true)}
+          darkMode={darkMode}
+          showCharts={showCharts}
+        />
+      )}
+      
+      {/* Mobile Export/Import Modal */}
+      {showMobileExportModal && (
+        <DataExportImportModal
+          onExport={exportData}
+          onImport={importData}
+          exportFilename={`orti-finance-${selectedYear}`}
+          darkMode={darkMode}
+          onOpenChange={setShowMobileExportModal}
+        />
+      )}
     </div>
     </DndContext>
   )
