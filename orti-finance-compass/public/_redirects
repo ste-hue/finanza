@@ -1,1 +1,4 @@
-/*    /index.html   200
+# SPA routing - serve index.html for all routes except assets
+/api/* 404
+/assets/* 404
+/* /index.html 200

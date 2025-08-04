@@ -11,7 +11,8 @@
     "preview": "vite preview",
     "predeploy": "VITE_GITHUB_PAGES=true npm run build",
     "deploy": "gh-pages -d dist",
-    "deploy:cloudflare": "npm run build && npx wrangler pages deploy dist --project-name finanza-react-app --commit-dirty=true"
+    "deploy:cloudflare": "npm run build && npx wrangler pages deploy dist --project-name finanza --commit-dirty=true",
+    "pages:dev": "npm run build && npx wrangler pages dev dist --port 8080 --compatibility-date=2025-08-04"
   },
   "homepage": "https://ste-hue.github.io/finanza",
   "dependencies": {

@@ -1,73 +1,202 @@
-# Welcome to your Lovable project
+# ORTI Finance Dashboard
 
-## Project info
+**Gestionale finanziario aziendale** con dashboard interattiva, importazione Excel e analisi in tempo reale.
 
-**URL**: https://lovable.dev/projects/9ba1712b-b4f0-42e8-9e2e-7dfebf6d3f00
+## 🚀 Live App
 
-## How can I edit this code?
+- **Production**: https://finanza-63f.pages.dev
+- **Custom Domain**: https://finanzaorti.com
 
-There are several ways of editing your application.
+## 🛠️ Tech Stack
 
-**Use Lovable**
+- **Frontend**: React 18, TypeScript, Vite
+- **UI/UX**: shadcn-ui, Tailwind CSS, Lucide Icons
+- **Backend**: Supabase (Database + Auth)
+- **Authentication**: Google OAuth + Supabase Auth
+- **Deployment**: Cloudflare Pages
+- **Development**: Wrangler Pages
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/9ba1712b-b4f0-42e8-9e2e-7dfebf6d3f00) and start prompting.
+## 🏗️ Development Setup
 
-Changes made via Lovable will be committed automatically to this repo.
+### Prerequisites
+- Node.js & npm ([install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating))
+- Git
 
-**Use your preferred IDE**
+### Local Development
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+```bash
+# Clone the repository
+git clone https://github.com/ste-hue/finanza.git
+cd finanza/orti-finance-compass
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+# Install dependencies
+npm install
 
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start development server (fast, for active development)
 npm run dev
+# Opens: http://localhost:5173
 ```
 
-**Edit a file directly in GitHub**
+## 🌩️ Cloudflare Pages Development
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Setup Wrangler (one-time)
+```bash
+# Login to Cloudflare (opens browser)
+npx wrangler login
 
-**Use GitHub Codespaces**
+# Verify authentication
+npx wrangler whoami
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### Development Workflows
 
-## What technologies are used for this project?
+**1. Fast Development (Vite)**
+```bash
+npm run dev
+# ✅ Hot reload, fast builds
+# ✅ Best for active coding
+# 🟡 Different from production environment
+```
 
-This project is built with:
+**2. Production Environment Testing (Wrangler)**
+```bash
+npm run pages:dev
+# ✅ Identical to production environment  
+# ✅ Same headers, caching, routing as Cloudflare Pages
+# ✅ Test before deploy
+# 🟡 Slower than Vite dev
+# 🌐 Opens on http://localhost:8080
+```
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+**3. Build & Preview**
+```bash
+npm run build      # Build for production
+npm run preview    # Preview built app locally
+```
 
-## How can I deploy this project?
+## 🚢 Deployment
 
-Simply open [Lovable](https://lovable.dev/projects/9ba1712b-b4f0-42e8-9e2e-7dfebf6d3f00) and click on Share -> Publish.
+### Automatic Deployment (Recommended)
+```bash
+# Make changes, commit and push
+git add .
+git commit -m "your changes"
+git push origin master
 
-## Can I connect a custom domain to my Lovable project?
+# ✅ Automatically deploys to https://finanza-63f.pages.dev
+# ✅ GitHub integration configured
+# ✅ Production branch: master
+```
 
-Yes, you can!
+### Manual Deployment
+```bash
+npm run deploy:cloudflare
+# Builds and deploys directly via Wrangler
+```
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## 📊 Available Scripts
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Vite development server (port 5173) |
+| `npm run build` | Build for production |
+| `npm run preview` | Preview production build locally |
+| `npm run pages:dev` | Wrangler Pages development server |
+| `npm run deploy:cloudflare` | Manual deploy via Wrangler |
+| `npm run lint` | Run ESLint |
+
+## 🔧 Configuration Files
+
+### Wrangler Configuration (`wrangler.toml`)
+- **Project**: `finanza`
+- **Build output**: `dist/`
+- **Compatibility date**: `2025-08-04`
+
+### Cloudflare Pages Configuration
+- **Headers** (`public/_headers`): Security headers and cache control
+- **Redirects** (`public/_redirects`): SPA routing for React Router
+
+### Build Configuration
+- **Framework**: Vite + React
+- **Build command**: `npm run build`
+- **Output directory**: `dist`
+- **Root directory**: `orti-finance-compass`
+
+## 🔐 Environment Variables
+
+Production environment variables are configured in Cloudflare Pages dashboard:
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+
+For local development, create `.env.local`:
+```env
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+## 🚨 Troubleshooting
+
+### OAuth Redirect Errors
+If you get `500` errors after Google OAuth, ensure these URLs are configured in Supabase Auth settings:
+- `https://finanza-63f.pages.dev`
+- `https://finanzaorti.com`
+- `http://localhost:5173` (for local development)
+
+### Build Errors
+```bash
+# Clear build cache
+rm -rf dist .vite node_modules/.vite
+npm run build
+```
+
+### Wrangler Issues
+```bash
+# Re-authenticate
+npx wrangler logout
+npx wrangler login
+
+# Check configuration
+npx wrangler pages project list
+```
+
+## 📁 Project Structure
+
+```
+orti-finance-compass/
+├── src/
+│   ├── components/         # React components
+│   ├── hooks/             # Custom hooks
+│   ├── lib/               # Utilities & services
+│   ├── pages/             # Route components
+│   ├── types/             # TypeScript types
+│   └── utils/             # Helper functions
+├── public/                # Static assets
+├── dist/                  # Built app (auto-generated)
+├── wrangler.toml         # Cloudflare Pages config
+└── package.json          # Dependencies & scripts
+```
+
+## 🎯 Workflow Summary
+
+**For Development**:
+1. `cd orti-finance-compass`
+2. `npm run dev` (fast development)
+3. `npm run pages:dev` (test production environment)
+
+**For Deployment**:
+1. Commit changes to `master` branch
+2. Push to GitHub
+3. ✅ Auto-deploys to production
+
+**Production URLs**:
+- **Main**: https://finanza-63f.pages.dev
+- **Custom**: https://finanzaorti.com
+
+---
+
+## 💡 Development Tips
+
+- Use `npm run dev` for active development (fastest)
+- Use `npm run pages:dev` before pushing to test production environment
+- All pushes to `master` auto-deploy to production
+- Check Cloudflare Pages dashboard for deployment status
