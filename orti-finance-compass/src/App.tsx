@@ -60,7 +60,7 @@ const ProtectedApp = () => {
 
   // Show main app if authenticated
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.VITE_GITHUB_PAGES ? '/finanza' : ''}>
       <Routes>
         <Route path="/" element={<Index />} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
