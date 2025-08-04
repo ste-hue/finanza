@@ -7,9 +7,11 @@ interface FinanceData {
   projections: { revenues: number; expenses: number }
   combined: { revenues: number; expenses: number }
   entries: any[]
-  categories: { [key: string]: { consolidated: number; projections: number; type: string; sort_order: number } }
+  categories: { [key: string]: { id?: string; consolidated: number; projections: number; type: string; sort_order: number; is_calculated?: boolean } }
+  subcategories: { [categoryName: string]: { [subcategoryName: string]: { consolidated: number; projections: number; monthlyData: { [month: number]: { consolidated: number; projections: number } } } } }
   monthlyData: { [month: number]: { revenues: number; expenses: number } }
   categoryMonthlyData: { [categoryName: string]: { [month: number]: { consolidated: number; projections: number } } }
+  subcategoryMonthlyData: { [categoryName: string]: { [subcategoryName: string]: { [month: number]: { consolidated: number; projections: number } } } }
 }
 
 export const useSupabaseFinance = (year: number = 2025) => {
@@ -19,8 +21,10 @@ export const useSupabaseFinance = (year: number = 2025) => {
     combined: { revenues: 0, expenses: 0 },
     entries: [],
     categories: {},
+    subcategories: {},
     monthlyData: {},
-    categoryMonthlyData: {}
+    categoryMonthlyData: {},
+    subcategoryMonthlyData: {}
   })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -47,9 +51,9 @@ export const useSupabaseFinance = (year: number = 2025) => {
       const { data: categoriesData, error: categoriesError } = await supabase
         .from('categories')
         .select(`
-          id, name, type_id, sort_order,
+          id, name, type_id, sort_order, is_calculated, is_total,
           subcategories (
-            id, name
+            id, name, sort_order
           )
         `)
         .eq('company_id', company.id)
@@ -108,9 +112,11 @@ export const useSupabaseFinance = (year: number = 2025) => {
   const processDataSeparately = (categoriesData: any[], entriesData: any[]): FinanceData => {
     const consolidated = { revenues: 0, expenses: 0 }
     const projections = { revenues: 0, expenses: 0 }
-    const categories: { [key: string]: { consolidated: number; projections: number; type: string; sort_order: number } } = {}
+    const categories: { [key: string]: { id?: string; consolidated: number; projections: number; type: string; sort_order: number; is_calculated?: boolean } } = {}
+    const subcategories: { [categoryName: string]: { [subcategoryName: string]: { consolidated: number; projections: number; monthlyData: { [month: number]: { consolidated: number; projections: number } } } } } = {}
     const monthlyData: { [month: number]: { revenues: number; expenses: number } } = {}
     const categoryMonthlyData: { [categoryName: string]: { [month: number]: { consolidated: number; projections: number } } } = {}
+    const subcategoryMonthlyData: { [categoryName: string]: { [subcategoryName: string]: { [month: number]: { consolidated: number; projections: number } } } } = {}
 
     // Initialize months
     for (let i = 1; i <= 12; i++) {
@@ -120,10 +126,12 @@ export const useSupabaseFinance = (year: number = 2025) => {
     // 📂 First, initialize ALL categories (even without entries)
     categoriesData.forEach(category => {
       categories[category.name] = {
+        id: category.id, // 🆔 Include category ID for subcategory creation
         consolidated: 0,
         projections: 0,
         type: category.type_id,
-        sort_order: category.sort_order || 999
+        sort_order: category.sort_order || 999,
+        is_calculated: category.is_calculated || false
       }
       
       // Initialize monthly data for all categories
@@ -131,21 +139,46 @@ export const useSupabaseFinance = (year: number = 2025) => {
       for (let month = 1; month <= 12; month++) {
         categoryMonthlyData[category.name][month] = { consolidated: 0, projections: 0 }
       }
+      
+      // Initialize subcategories data
+      subcategories[category.name] = {}
+      subcategoryMonthlyData[category.name] = {}
+      
+      if (category.subcategories && category.subcategories.length > 0) {
+        // 🎯 Sort subcategories by sort_order before processing
+        const sortedSubcategories = [...category.subcategories].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+        
+        sortedSubcategories.forEach((subcategory: any) => {
+          subcategories[category.name][subcategory.name] = {
+            consolidated: 0,
+            projections: 0,
+            monthlyData: {},
+            sort_order: subcategory.sort_order  // 🎯 Include sort_order
+          }
+          
+          subcategoryMonthlyData[category.name][subcategory.name] = {}
+          for (let month = 1; month <= 12; month++) {
+            subcategories[category.name][subcategory.name].monthlyData[month] = { consolidated: 0, projections: 0 }
+            subcategoryMonthlyData[category.name][subcategory.name][month] = { consolidated: 0, projections: 0 }
+          }
+        })
+      }
     })
 
-    // Create a lookup map from subcategory_id to category for faster processing
+    // Create a lookup map from subcategory_id to category and subcategory info
     const subcategoryToCategoryMap: { [subcategoryId: string]: any } = {}
     categoriesData.forEach(category => {
       category.subcategories?.forEach((subcategory: any) => {
         subcategoryToCategoryMap[subcategory.id] = {
-          name: category.name,
+          categoryName: category.name,
+          subcategoryName: subcategory.name,
           type_id: category.type_id,
           sort_order: category.sort_order
         }
       })
     })
 
-    // 📋 Now process entries and add them to the initialized categories
+    // 📋 Now process entries and add them to the initialized categories and subcategories
     entriesData.forEach(entry => {
       const subcategoryId = entry.subcategories?.id
       if (!subcategoryId || !subcategoryToCategoryMap[subcategoryId]) {
@@ -154,13 +187,27 @@ export const useSupabaseFinance = (year: number = 2025) => {
       }
 
       const categoryInfo = subcategoryToCategoryMap[subcategoryId]
-      const categoryName = categoryInfo.name
+      const categoryName = categoryInfo.categoryName
+      const subcategoryName = categoryInfo.subcategoryName
       const categoryType = categoryInfo.type_id
       const value = Number(entry.value) || 0
       const isProjection = entry.is_projection
       const month = entry.month
 
-      // Add to appropriate buckets
+      // Add to subcategory data
+      if (subcategories[categoryName] && subcategories[categoryName][subcategoryName]) {
+        if (isProjection) {
+          subcategories[categoryName][subcategoryName].projections += value
+          subcategories[categoryName][subcategoryName].monthlyData[month].projections += value
+          subcategoryMonthlyData[categoryName][subcategoryName][month].projections += value
+        } else {
+          subcategories[categoryName][subcategoryName].consolidated += value
+          subcategories[categoryName][subcategoryName].monthlyData[month].consolidated += value
+          subcategoryMonthlyData[categoryName][subcategoryName][month].consolidated += value
+        }
+      }
+
+      // Add to category aggregated data
       if (isProjection) {
         categories[categoryName].projections += value
         categoryMonthlyData[categoryName][month].projections += value
@@ -191,8 +238,10 @@ export const useSupabaseFinance = (year: number = 2025) => {
       },
       entries: entriesData,
       categories,
+      subcategories,
       monthlyData,
-      categoryMonthlyData
+      categoryMonthlyData,
+      subcategoryMonthlyData
     }
   }
 
@@ -279,6 +328,7 @@ export const useSupabaseFinance = (year: number = 2025) => {
   // 💾 Save entry with real-time update
   const saveEntry = useCallback(async (entryData: {
     categoryName: string
+    subcategoryName?: string
     month: number
     value: number
     isProjection: boolean
@@ -300,18 +350,20 @@ export const useSupabaseFinance = (year: number = 2025) => {
       }
       if (!category) throw new Error(`Category '${entryData.categoryName}' not found`)
 
+      // 🎯 Use specific subcategory name or fallback to 'Main'
+      const subcategoryName = entryData.subcategoryName || 'Main'
       const { data: subcategory, error: subcategoryError } = await supabase
         .from('subcategories')
         .select('id')
         .eq('category_id', category.id)
-        .eq('name', 'Main')
+        .eq('name', subcategoryName)
         .single()
 
       if (subcategoryError) {
         console.error('Subcategory query error:', subcategoryError)
         throw subcategoryError
       }
-      if (!subcategory) throw new Error('Subcategory not found')
+      if (!subcategory) throw new Error(`Subcategory '${subcategoryName}' not found for category '${entryData.categoryName}'`)
 
       // 🔍 First check if entry exists (with better error handling)
       const { data: existingEntry, error: searchError } = await supabase
@@ -451,6 +503,63 @@ export const useSupabaseFinance = (year: number = 2025) => {
     } catch (err: any) {
       toast({
         title: "❌ Errore creazione",
+        description: err.message,
+        variant: "destructive"
+      })
+      throw err
+    }
+  }, [loadData])
+
+  // ➕ Create new subcategory
+  const createSubcategory = useCallback(async (subcategoryData: {
+    name: string
+    categoryId: string
+    sort_order?: number
+  }) => {
+    try {
+      console.log('➕ Creating subcategory:', subcategoryData)
+      
+      // Check if subcategory with same name already exists for this category
+      const { data: existingSubcategory, error: checkError } = await supabase
+        .from('subcategories')
+        .select('id')
+        .eq('name', subcategoryData.name)
+        .eq('category_id', subcategoryData.categoryId)
+        .maybeSingle()
+      
+      if (checkError) throw checkError
+      if (existingSubcategory) {
+        throw new Error(`Sottocategoria '${subcategoryData.name}' esiste già per questa categoria`)
+      }
+      
+      // Insert new subcategory
+      const { data: newSubcategory, error: subcategoryError } = await supabase
+        .from('subcategories')
+        .insert({
+          name: subcategoryData.name,
+          category_id: subcategoryData.categoryId,
+          sort_order: subcategoryData.sort_order || 1
+        })
+        .select()
+        .single()
+
+      if (subcategoryError) {
+        console.error('Subcategory creation error:', subcategoryError)
+        throw new Error(`Errore creazione sottocategoria: ${subcategoryError.message}`)
+      }
+
+      // Reload data
+      await loadData()
+      
+      toast({
+        title: "✅ Sottocategoria creata",
+        description: `${subcategoryData.name} aggiunta con successo`
+      })
+      
+      return newSubcategory
+    } catch (err: any) {
+      toast({
+        title: "❌ Errore creazione sottocategoria",
         description: err.message,
         variant: "destructive"
       })
@@ -790,6 +899,48 @@ export const useSupabaseFinance = (year: number = 2025) => {
     }))
   }, [data.categories])
 
+  // 🎯 Optimistic update for subcategory drag & drop (local state only)
+  const updateSubcategoriesOrderOptimistic = useCallback((categoryName: string, newOrderedSubcategories: string[]) => {
+    const newSubcategoriesState = { ...data.subcategories }
+    const newSubcategoryMonthlyDataState = { ...data.subcategoryMonthlyData }
+    
+    if (newSubcategoriesState[categoryName] && newSubcategoryMonthlyDataState[categoryName]) {
+      // Create new objects with reordered subcategories and updated sort_order
+      const reorderedSubcategoryData: any = {}
+      const reorderedMonthlyData: any = {}
+      
+      newOrderedSubcategories.forEach((subcategoryName, index) => {
+        if (newSubcategoriesState[categoryName][subcategoryName]) {
+          // Copy subcategory data with new sort_order
+          reorderedSubcategoryData[subcategoryName] = {
+            ...newSubcategoriesState[categoryName][subcategoryName],
+            sort_order: index + 1
+          }
+          
+          // Copy monthly data
+          reorderedMonthlyData[subcategoryName] = newSubcategoryMonthlyDataState[categoryName][subcategoryName]
+        }
+      })
+      
+      // Keep 'Main' if it exists
+      if (newSubcategoriesState[categoryName]['Main']) {
+        reorderedSubcategoryData['Main'] = newSubcategoriesState[categoryName]['Main']
+        reorderedMonthlyData['Main'] = newSubcategoryMonthlyDataState[categoryName]['Main']
+      }
+      
+      // Update the category's subcategories
+      newSubcategoriesState[categoryName] = reorderedSubcategoryData
+      newSubcategoryMonthlyDataState[categoryName] = reorderedMonthlyData
+    }
+    
+    // Update local state immediately (no DB call)
+    setData(prevData => ({
+      ...prevData,
+      subcategories: newSubcategoriesState,
+      subcategoryMonthlyData: newSubcategoryMonthlyDataState
+    }))
+  }, [data.subcategories, data.subcategoryMonthlyData])
+
   const displayData = getDisplayData()
 
   return {
@@ -817,10 +968,12 @@ export const useSupabaseFinance = (year: number = 2025) => {
     saveEntry,
     setViewMode,
     createCategory,
+    createSubcategory,
     deleteCategory,
     exportData,
     importData,
     updateCategoryOrder,
-    updateCategoriesOrderOptimistic
+    updateCategoriesOrderOptimistic,
+    updateSubcategoriesOrderOptimistic
   }
 }

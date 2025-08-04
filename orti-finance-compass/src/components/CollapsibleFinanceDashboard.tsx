@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Card, CardHeader, CardContent } from '@/components/ui/card'
 import { 
   ChevronDown, 
+  ChevronUp,
   ChevronRight, 
   Plus, 
   Edit3, 
@@ -56,6 +57,184 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 // Removed: createClient import - using global client instead
 
+// 🎯 SUBCATEGORY ROW COMPONENT (no drag and drop)
+const SubcategoryRow: React.FC<{
+  categoryName: string
+  subcategoryName: string
+  index: number
+  categoryType: 'revenue' | 'expense' | 'balance'
+  months: string[]
+  editingCell: string | null
+  editValue: string
+  darkMode: boolean
+  zenMode: boolean
+  onCellClick: (categoryName: string, subcategoryName: string, month: number) => void
+  onCellSave: () => void
+  onDeleteSubcategory?: (categoryName: string, subcategoryName: string) => void
+  onMoveSubcategory?: (categoryName: string, subcategoryName: string, direction: 'up' | 'down') => void
+  getSubcategoryCellValue: (categoryName: string, subcategoryName: string, month: number) => number
+  formatCurrency: (value: number) => string
+  setEditValue: (value: string) => void
+  setEditingCell: (cellId: string | null) => void
+}> = ({
+  categoryName,
+  subcategoryName,
+  index,
+  categoryType,
+  months,
+  editingCell,
+  editValue,
+  darkMode,
+  zenMode,
+  onCellClick,
+  onCellSave,
+  onDeleteSubcategory,
+  onMoveSubcategory,
+  getSubcategoryCellValue,
+  formatCurrency,
+  setEditValue,
+  setEditingCell
+}) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: `${categoryName}::${subcategoryName}` })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+  const colorClass = categoryType === 'revenue' 
+    ? (darkMode ? 'text-green-300' : 'text-green-600')
+    : categoryType === 'balance'
+    ? (darkMode ? 'text-purple-300' : 'text-purple-600')
+    : (darkMode ? 'text-red-300' : 'text-red-600')
+
+  return (
+    <tr
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "border-b transition-all duration-200 bg-opacity-50",
+        darkMode 
+          ? "hover:bg-gray-700/20 border-gray-700 bg-gray-800/20" 
+          : "hover:bg-slate-50/50 border-slate-100 bg-slate-50/20",
+        index % 2 === 0 && (darkMode ? "bg-gray-800/10" : "bg-slate-50/10"),
+        isDragging && (darkMode ? 'bg-gray-700/40' : 'bg-slate-100/60')
+      )}
+    >
+      <td className={cn(
+        "p-3 font-medium sticky left-0 z-10 pl-8",
+        darkMode ? "text-gray-300 bg-gray-800/80" : "text-slate-600 bg-white/80"
+      )}>
+        <div className="flex items-center space-x-2">
+          <span className="text-xs">├─</span>
+          
+          {/* 🎯 Drag Handle */}
+          <div
+            {...attributes}
+            {...listeners}
+            className={cn(
+              "cursor-grab active:cursor-grabbing p-1 rounded transition-colors opacity-60 hover:opacity-100",
+              darkMode ? "hover:bg-gray-600" : "hover:bg-slate-200"
+            )}
+          >
+            <GripVertical className="w-3 h-3 text-gray-400" />
+          </div>
+          
+          <span className={cn("text-sm", colorClass)}>{subcategoryName}</span>
+          
+          {/* 📱 Mobile Reorder Buttons */}
+          {onMoveSubcategory && (
+            <div className="md:hidden flex space-x-1 ml-auto">
+              <button
+                onClick={() => onMoveSubcategory(categoryName, subcategoryName, 'up')}
+                className={cn(
+                  "p-1 rounded transition-colors",
+                  darkMode ? "hover:bg-gray-600 text-gray-400" : "hover:bg-slate-200 text-slate-500"
+                )}
+              >
+                <ChevronUp className="w-3 h-3" />
+              </button>
+              <button
+                onClick={() => onMoveSubcategory(categoryName, subcategoryName, 'down')}
+                className={cn(
+                  "p-1 rounded transition-colors",
+                  darkMode ? "hover:bg-gray-600 text-gray-400" : "hover:bg-slate-200 text-slate-500"
+                )}
+              >
+                <ChevronDown className="w-3 h-3" />
+              </button>
+            </div>
+          )}
+        </div>
+      </td>
+
+      {/* Month cells */}
+      {months.map((_, monthIndex) => {
+        const month = monthIndex + 1
+        const cellId = `${categoryName}-${subcategoryName}-${month}`
+        const value = getSubcategoryCellValue(categoryName, subcategoryName, month)
+        const isEditing = editingCell === cellId
+        
+        return (
+          <td key={month} className="p-1 md:p-2 text-center">
+            {isEditing ? (
+              <Input
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') onCellSave()
+                  if (e.key === 'Escape') setEditingCell(null)
+                }}
+                onBlur={onCellSave}
+                className={cn(
+                  "h-7 md:h-8 text-xs md:text-sm w-full",
+                  darkMode && "bg-gray-700 border-gray-600"
+                )}
+                autoFocus
+              />
+            ) : (
+              <button
+                onClick={() => onCellClick(categoryName, subcategoryName, month)}
+                className={cn(
+                  "w-full h-7 md:h-8 text-xs md:text-sm rounded px-1 md:px-2 transition-all group",
+                  darkMode ? "hover:bg-gray-600" : "hover:bg-slate-200",
+                  colorClass
+                )}
+              >
+                {formatCurrency(value)}
+              </button>
+            )}
+          </td>
+        )
+      })}
+
+      {!zenMode && (
+        <td className="p-2 text-center">
+          {onDeleteSubcategory && (
+            <button
+              onClick={() => onDeleteSubcategory(categoryName, subcategoryName)}
+              className={cn(
+                "p-1 rounded transition-colors opacity-60 hover:opacity-100",
+                darkMode ? "hover:bg-red-700/30 text-red-400" : "hover:bg-red-100 text-red-600"
+              )}
+              title={`Cancella sottocategoria "${subcategoryName}"`}
+            >
+              <Trash2 className="w-3 h-3" />
+            </button>
+          )}
+        </td>
+      )}
+    </tr>
+  )
+}
+
 // 🎯 DRAGGABLE CATEGORY ROW COMPONENT
 const DraggableCategoryRow: React.FC<{
   categoryName: string
@@ -75,6 +254,8 @@ const DraggableCategoryRow: React.FC<{
   formatCurrency: (value: number) => string
   setEditValue: (value: string) => void
   setEditingCell: (cellId: string | null) => void
+  getCategoryValidationStatus?: (categoryName: string) => { hasIssues: boolean; issueMonths: number[] }
+  validateCategoryMonth?: (categoryName: string, month: number) => { isValid: boolean; difference: number; categoryTotal: number; subcategorySum: number }
 }> = ({
   categoryName,
   index,
@@ -92,7 +273,9 @@ const DraggableCategoryRow: React.FC<{
   getCellValue,
   formatCurrency,
   setEditValue,
-  setEditingCell
+  setEditingCell,
+  getCategoryValidationStatus,
+  validateCategoryMonth
 }) => {
   const {
     attributes,
@@ -150,7 +333,7 @@ const DraggableCategoryRow: React.FC<{
             <GripVertical className={cn("w-4 h-4", colorClass)} />
           </div>
           
-          {categoryType === 'revenue' && (
+          {(categoryType === 'revenue' || categoryType === 'expense') && (
             <button
               onClick={() => onToggleDetails(categoryName)}
               className={cn(
@@ -165,7 +348,23 @@ const DraggableCategoryRow: React.FC<{
             </button>
           )}
           
-          <span className="flex-1">{categoryName}</span>
+          <span className="flex-1 flex items-center gap-2">
+            {categoryName}
+            {getCategoryValidationStatus && (() => {
+              const validation = getCategoryValidationStatus(categoryName)
+              if (validation.hasIssues) {
+                return (
+                  <span 
+                    className="text-yellow-500 text-xs"
+                    title={`Problemi di validazione nei mesi: ${validation.issueMonths.join(', ')}`}
+                  >
+                    ⚠️
+                  </span>
+                )
+              }
+              return null
+            })()}
+          </span>
         </div>
       </td>
 
@@ -175,6 +374,13 @@ const DraggableCategoryRow: React.FC<{
         const cellId = `${categoryName}-${month}`
         const value = getCellValue(categoryName, month)
         const isEditing = editingCell === cellId
+        
+        // Check validation for this specific month
+        const hasValidationIssue = validateCategoryMonth && (() => {
+          const validation = validateCategoryMonth(categoryName, month)
+          // 🎯 Solo mostra warning se ci sono sottocategorie con dati E c'è discrepanza
+          return validation.hasSubcategories && !validation.isValid
+        })()
         
         return (
           <td key={month} className="p-1 md:p-2 text-center">
@@ -197,15 +403,20 @@ const DraggableCategoryRow: React.FC<{
               <button
                 onClick={() => onCellClick(categoryName, month)}
                 className={cn(
-                  "w-full h-7 md:h-8 text-xs md:text-sm rounded px-1 md:px-2 transition-all group",
+                  "w-full h-7 md:h-8 text-xs md:text-sm rounded px-1 md:px-2 transition-all group relative",
                   darkMode ? "hover:bg-gray-700" : "hover:bg-slate-100",
-                  value > 0 && "font-medium"
+                  value > 0 && "font-medium",
+                  hasValidationIssue && "ring-1 ring-yellow-400"
                 )}
+                title={hasValidationIssue ? "⚠️ Discrepanza con sottocategorie" : ""}
               >
                 {value === 0 ? (
                   <span className={darkMode ? "text-gray-500" : "text-slate-400"}>−</span>
                 ) : (
                   <span className={cn("font-medium", colorClass)}>{formatCurrency(value)}</span>
+                )}
+                {hasValidationIssue && (
+                  <span className="absolute -top-1 -right-1 text-yellow-500 text-xs">⚠️</span>
                 )}
                 {!zenMode && (
                   <Edit3 className="w-3 h-3 ml-1 opacity-0 group-hover:opacity-50 transition-opacity inline" />
@@ -273,6 +484,8 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
     yearTotals, 
     categoryMonthlyData,
     categories,
+    subcategories,
+    subcategoryMonthlyData,
     viewMode,
     setViewMode,
     saveEntry,
@@ -282,6 +495,7 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
     importData,
     updateCategoryOrder,
     updateCategoriesOrderOptimistic,
+    updateSubcategoriesOrderOptimistic,
     loadData
   } = useSupabaseFinance(selectedYear)
 
@@ -357,6 +571,27 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
 
   // ✏️ Handle cell editing
   const handleCellClick = (categoryName: string, month: number) => {
+    // 🧮 Check if category value is calculated from subcategories
+    const subcategoryList = getSubcategoriesList(categoryName)
+    let subcategorySum = 0
+    let hasSubcategoryData = false
+    
+    if (subcategoryList.length > 0) {
+      subcategorySum = subcategoryList.reduce((sum, subName) => {
+        const subValue = getSubcategoryCellValue(categoryName, subName, month)
+        if (subValue > 0) hasSubcategoryData = true
+        return sum + subValue
+      }, 0)
+    }
+    
+    if (hasSubcategoryData) {
+      toast({
+        title: "🧮 Valore calcolato automaticamente",
+        description: `"${categoryName}" per questo mese mostra la somma delle sottocategorie (${subcategorySum.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })}). Espandi per modificare i dettagli.`,
+      })
+      return
+    }
+    
     const cellId = `${categoryName}-${month}`
     setEditingCell(cellId)
     const currentValue = getCellValue(categoryName, month)
@@ -365,11 +600,20 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
     setOriginalValue(valueString) // 🔧 Track original value for comparison
   }
 
+  // 🔍 Handle subcategory cell click (now editable!)
+  const handleSubcategoryCellClick = (categoryName: string, subcategoryName: string, month: number) => {
+    const cellId = `${categoryName}-${subcategoryName}-${month}`
+    setEditingCell(cellId)
+    const currentValue = getSubcategoryCellValue(categoryName, subcategoryName, month)
+    const valueString = currentValue.toString()
+    setEditValue(valueString)
+    setOriginalValue(valueString)
+  }
+
   const handleCellSave = async () => {
     if (!editingCell) return
     
-    const [categoryName, monthStr] = editingCell.split('-')
-    const month = parseInt(monthStr)
+    const cellParts = editingCell.split('-')
     const value = parseFloat(editValue) || 0
     const originalValueNum = parseFloat(originalValue) || 0
 
@@ -387,21 +631,64 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
       const currentMonth = new Date().getMonth() + 1
       const currentYear = new Date().getFullYear()
       
+      let categoryName: string
+      let subcategoryName: string | undefined
+      let month: number
+      
+      if (cellParts.length === 2) {
+        // Format: "CategoryName-Month" (main category)
+        [categoryName, month] = [cellParts[0], parseInt(cellParts[1])]
+      } else if (cellParts.length === 3) {
+        // Format: "CategoryName-SubcategoryName-Month" (subcategory)
+        [categoryName, subcategoryName, month] = [cellParts[0], cellParts[1], parseInt(cellParts[2])]
+      } else {
+        throw new Error(`Invalid cell ID format: ${editingCell}`)
+      }
+      
       // Logic: future months = projections, past/current = consolidated
       const isProjection = (selectedYear > currentYear) || 
                           (selectedYear === currentYear && month > currentMonth)
       
-      await saveEntry({
-        categoryName: categoryName,
-        month,
-        value,
-        isProjection
-      })
-      
-      toast({
-        title: "✅ Valore salvato",
-        description: `${categoryName} - ${months[month-1]}: ${formatCurrency(value)}`
-      })
+      if (subcategoryName) {
+        // 🔍 Save subcategory entry
+        await saveEntry({
+          categoryName: categoryName,
+          subcategoryName: subcategoryName, 
+          month,
+          value,
+          isProjection
+        })
+        
+        // ⚠️ Validate after saving (solo se ci sono sottocategorie con dati)
+        setTimeout(() => {
+          const validation = validateCategoryMonth(categoryName, month)
+          if (validation.hasSubcategories && !validation.isValid) {
+            toast({
+              title: "⚠️ Validazione",
+              description: `ATTENZIONE: La somma delle sottocategorie (${validation.subcategorySum.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })}) non corrisponde al totale di "${categoryName}" (${validation.categoryTotal.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })})`,
+              variant: "destructive"
+            })
+          } else {
+            toast({
+              title: "✅ Sottocategoria aggiornata",
+              description: `${subcategoryName} (${categoryName}) - ${month}/${selectedYear}: ${value.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })} ✓`
+            })
+          }
+        }, 500) // Delay to allow data refresh
+      } else {
+        // 🎯 Save main category entry
+        await saveEntry({
+          categoryName: categoryName,
+          month,
+          value,
+          isProjection
+        })
+        
+        toast({
+          title: "✅ Categoria aggiornata", 
+          description: `${categoryName} - ${month}/${selectedYear}: ${value.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })}`
+        })
+      }
     } catch (err) {
       toast({
         title: "❌ Errore",
@@ -416,6 +703,25 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
   }
 
   const getCellValue = (categoryName: string, month: number): number => {
+    // 🧮 Check if we should calculate from subcategories
+    const subcategoryList = getSubcategoriesList(categoryName)
+    let hasSubcategoryData = false
+    let subcategorySum = 0
+    
+    if (subcategoryList.length > 0) {
+      subcategorySum = subcategoryList.reduce((sum, subName) => {
+        const subValue = getSubcategoryCellValue(categoryName, subName, month)
+        if (subValue > 0) hasSubcategoryData = true
+        return sum + subValue
+      }, 0)
+    }
+    
+    // 🎯 Se ci sono sottocategorie con dati, usa la loro somma
+    if (hasSubcategoryData) {
+      return subcategorySum
+    }
+    
+    // 🎯 Altrimenti usa il valore della categoria principale
     const categoryMonthData = categoryMonthlyData?.[categoryName]?.[month]
     if (!categoryMonthData) return 0
     
@@ -428,6 +734,111 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
       default:
         return categoryMonthData.consolidated + categoryMonthData.projections
     }
+  }
+
+  // 🔍 Get subcategory cell value based on view mode
+  const getSubcategoryCellValue = (categoryName: string, subcategoryName: string, month: number): number => {
+    const subcategoryMonthData = subcategoryMonthlyData?.[categoryName]?.[subcategoryName]?.[month]
+    if (!subcategoryMonthData) return 0
+    
+    switch (viewMode) {
+      case 'consolidated':
+        return subcategoryMonthData.consolidated
+      case 'projections':
+        return subcategoryMonthData.projections
+      case 'combined':
+      default:
+        return subcategoryMonthData.consolidated + subcategoryMonthData.projections
+    }
+  }
+
+  // 🧮 Check if category has subcategories with data
+  const hasSubcategoryData = (categoryName: string): boolean => {
+    const categorySubcategories = subcategories?.[categoryName]
+    if (!categorySubcategories) return false
+    
+    return Object.keys(categorySubcategories).some(subName => {
+      const subData = categorySubcategories[subName]
+      return subData.consolidated > 0 || subData.projections > 0
+    })
+  }
+
+  // 🔍 Validate that subcategory totals match category total for a specific month
+  const validateCategoryMonth = (categoryName: string, month: number): { isValid: boolean; difference: number; categoryTotal: number; subcategorySum: number; hasSubcategories: boolean } => {
+    const categoryTotal = getCellValue(categoryName, month)
+    
+    const subcategoryList = getSubcategoriesList(categoryName)
+    
+    // 🎯 Se non ci sono sottocategorie, è sempre valido
+    if (subcategoryList.length === 0) {
+      return {
+        isValid: true,
+        difference: 0,
+        categoryTotal,
+        subcategorySum: 0,
+        hasSubcategories: false
+      }
+    }
+    
+    // Controlla se le sottocategorie hanno effettivamente dei dati
+    const subcategorySum = subcategoryList.reduce((sum, subName) => {
+      return sum + getSubcategoryCellValue(categoryName, subName, month)
+    }, 0)
+    
+    // 🎯 Se le sottocategorie sono tutte a zero, non validare (categoria normale)
+    if (subcategorySum === 0) {
+      return {
+        isValid: true,
+        difference: 0,
+        categoryTotal,
+        subcategorySum: 0,
+        hasSubcategories: false
+      }
+    }
+    
+    // 🎯 Solo se ci sono sottocategorie con dati, allora valida
+    const difference = Math.abs(categoryTotal - subcategorySum)
+    
+    return {
+      isValid: difference < 0.01, // Allow for small rounding errors
+      difference,
+      categoryTotal,
+      subcategorySum,
+      hasSubcategories: true
+    }
+  }
+
+  // 🔍 Get validation status for a category (all months)
+  const getCategoryValidationStatus = (categoryName: string): { hasIssues: boolean; issueMonths: number[] } => {
+    const issueMonths: number[] = []
+    
+    for (let month = 1; month <= 12; month++) {
+      const validation = validateCategoryMonth(categoryName, month)
+      // 🎯 Solo segnala problemi se ci sono sottocategorie con dati E c'è una discrepanza
+      if (validation.hasSubcategories && !validation.isValid) {
+        issueMonths.push(month)
+      }
+    }
+    
+    return {
+      hasIssues: issueMonths.length > 0,
+      issueMonths
+    }
+  }
+
+  // 📋 Get list of subcategories for a category (sorted by sort_order)
+  const getSubcategoriesList = (categoryName: string): string[] => {
+    const categorySubcategories = subcategories?.[categoryName]
+    if (!categorySubcategories) return []
+    
+    return Object.keys(categorySubcategories)
+      .filter(subName => subName !== 'Main') // Exclude generic "Main" subcategory
+      .sort((a, b) => {
+        // 🎯 Sort by sort_order instead of alphabetically
+        const sortOrderA = categorySubcategories[a]?.sort_order || 0
+        const sortOrderB = categorySubcategories[b]?.sort_order || 0
+        return sortOrderA - sortOrderB
+      })
   }
 
   // ➕ Add new category
@@ -466,6 +877,49 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
       } catch (err) {
         // Error already handled in deleteCategory
       }
+    }
+  }
+
+  // 🗑️ Delete subcategory (clear all its entries)
+  const handleDeleteSubcategory = async (categoryName: string, subcategoryName: string) => {
+    if (!window.confirm(`Sei sicuro di voler cancellare tutte le entries di "${subcategoryName}" dalla categoria "${categoryName}"?`)) {
+      return
+    }
+
+    try {
+      // For now, we'll set all values to 0 instead of deleting entries
+      // This preserves the data structure while clearing the values
+      const months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+      
+      for (const month of months) {
+        const currentValue = getSubcategoryCellValue(categoryName, subcategoryName, month)
+        if (currentValue !== 0) {
+          // Set value to 0 for both consolidated and projections
+          const currentMonth = new Date().getMonth() + 1
+          const currentYear = new Date().getFullYear()
+          const isProjection = (selectedYear > currentYear) || 
+                              (selectedYear === currentYear && month > currentMonth)
+          
+          await saveEntry({
+            categoryName: categoryName,
+            subcategoryName: subcategoryName,
+            month,
+            value: 0,
+            isProjection
+          })
+        }
+      }
+      
+      toast({
+        title: "✅ Sottocategoria azzerata",
+        description: `Tutti i valori di "${subcategoryName}" sono stati azzerati`,
+      })
+    } catch (error) {
+      toast({
+        title: "❌ Errore",
+        description: "Impossibile azzerare la sottocategoria",
+        variant: "destructive"
+      })
     }
   }
 
@@ -571,24 +1025,19 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
     return true // Show all columns, values will change based on viewMode
   }
 
-  // 🧮 Calculate totals (respecting current viewMode filter)
+  // 🧮 Calculate totals (respecting current viewMode filter AND subcategory sums)
   const calculateTotals = () => {
     const entrate = revenueCategories
     const uscite = expenseCategories
     
+    // 🎯 Use getCellValue which automatically calculates from subcategories when present
     const getTotalForCategory = (categoryName: string) => {
-      const categoryData = categories[categoryName]
-      if (!categoryData) return 0
-      
-      switch (viewMode) {
-        case 'consolidated':
-          return categoryData.consolidated || 0
-        case 'projections':
-          return categoryData.projections || 0
-        case 'combined':
-        default:
-          return (categoryData.consolidated || 0) + (categoryData.projections || 0)
+      // Sum all 12 months for this category using getCellValue
+      let total = 0
+      for (let month = 1; month <= 12; month++) {
+        total += getCellValue(categoryName, month)
       }
+      return total
     }
     
     const totaleEntrate = entrate.reduce((sum, cat) => sum + getTotalForCategory(cat), 0)
@@ -598,6 +1047,168 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
       entrate: totaleEntrate,
       uscite: totaleUscite,
       differenza: totaleEntrate - totaleUscite
+    }
+  }
+
+  // 🎯 Handle subcategory drag & drop
+  const handleSubcategoryDragEnd = async (activeId: string, overId: string) => {
+    const [activeCategoryName, activeSubcategoryName] = activeId.split('::')
+    const [overCategoryName, overSubcategoryName] = overId.split('::')
+    
+    if (activeCategoryName !== overCategoryName) {
+      setActiveDragId(null)
+      return
+    }
+    
+    const subcategoryList = getSubcategoriesList(activeCategoryName)
+    const activeIndex = subcategoryList.indexOf(activeSubcategoryName)
+    const overIndex = subcategoryList.indexOf(overSubcategoryName)
+    
+    if (activeIndex === overIndex) {
+      setActiveDragId(null)
+      return
+    }
+    
+    try {
+      // 🎯 OPTIMISTIC UPDATE: Update UI immediately, save to DB in background
+      
+      // 1️⃣ STEP 1: Calculate new subcategory order locally
+      const reorderedSubcategories = [...subcategoryList]
+      const [movedSubcategory] = reorderedSubcategories.splice(activeIndex, 1)
+      reorderedSubcategories.splice(overIndex, 0, movedSubcategory)
+      
+      // 2️⃣ STEP 2: Update UI state immediately (OPTIMISTIC)
+      // This updates the local state instantly - NO LOADING, NO FLASH!
+      updateSubcategoriesOrderOptimistic(activeCategoryName, reorderedSubcategories)
+      // This creates smooth UX while DB updates in background
+      
+      // 3️⃣ STEP 3: Save to database in BACKGROUND (async, non-blocking)
+      const saveToDatabase = async () => {
+        try {
+          await updateSubcategoriesOrder(activeCategoryName, reorderedSubcategories)
+          return true
+        } catch (dbError) {
+          // 4️⃣ STEP 4: If DB fails, revert UI (rare case)
+          console.error('Database save failed, reverting UI:', dbError)
+          await loadData() // Only reload on error
+          throw dbError
+        }
+      }
+      
+      // Start database save in background (don't await)
+      saveToDatabase()
+      
+      // ✨ IMMEDIATE SUCCESS - No loading, no flash!
+      toast({
+        title: "✅ Sottocategoria spostata",
+        description: `${activeSubcategoryName} riordinata istantaneamente`
+      })
+      
+      // 🚀 NO loadData() here - UI already updated optimistically!
+      
+    } catch (err: unknown) {
+      console.error('🚨 SUBCATEGORY DRAG ERROR:', err)
+      toast({
+        title: "❌ Errore drag & drop",
+        description: (err as Error)?.message || "Impossibile riordinare sottocategoria",
+        variant: "destructive"
+      })
+    }
+    
+    setActiveDragId(null)
+  }
+
+  // 📱 Handle mobile subcategory reordering
+  const handleMoveSubcategory = async (categoryName: string, subcategoryName: string, direction: 'up' | 'down') => {
+    try {
+      const subcategoryList = getSubcategoriesList(categoryName)
+      const currentIndex = subcategoryList.indexOf(subcategoryName)
+      
+      if (currentIndex === -1) return
+      
+      const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1
+      
+      if (newIndex < 0 || newIndex >= subcategoryList.length) return
+      
+      // 🎯 OPTIMISTIC UPDATE: Swap positions immediately
+      const reorderedSubcategories = [...subcategoryList]
+      const [movedSubcategory] = reorderedSubcategories.splice(currentIndex, 1)
+      reorderedSubcategories.splice(newIndex, 0, movedSubcategory)
+      
+      // Update UI immediately
+      updateSubcategoriesOrderOptimistic(categoryName, reorderedSubcategories)
+      
+      // Save to database in background
+      const saveToDatabase = async () => {
+        try {
+          await updateSubcategoriesOrder(categoryName, reorderedSubcategories)
+          return true
+        } catch (dbError) {
+          console.error('Database save failed, reverting UI:', dbError)
+          await loadData() // Only reload on error
+          throw dbError
+        }
+      }
+      
+      saveToDatabase()
+      
+      toast({
+        title: "✅ Sottocategoria spostata",
+        description: `${subcategoryName} spostata ${direction === 'up' ? 'su' : 'giù'} istantaneamente`
+      })
+      
+    } catch (error) {
+      console.error('🚨 MOBILE SUBCATEGORY MOVE ERROR:', error)
+      toast({
+        title: "❌ Errore spostamento",
+        description: "Impossibile spostare la sottocategoria",
+        variant: "destructive"
+      })
+    }
+  }
+
+  // Helper function to update subcategories order in database
+  const updateSubcategoriesOrder = async (categoryName: string, reorderedSubcategories: string[]) => {
+    // Get category ID
+    const categoryData = categories[categoryName]
+    if (!categoryData?.id) {
+      throw new Error(`Category not found: ${categoryName}`)
+    }
+    
+    // Get all subcategories for this category
+    const { data: subcategoriesList, error: fetchError } = await supabase
+      .from('subcategories')
+      .select('id, name')
+      .eq('category_id', categoryData.id)
+    
+    if (fetchError) {
+      throw new Error(`Could not fetch subcategories: ${fetchError.message}`)
+    }
+    
+    if (!subcategoriesList) {
+      throw new Error('Could not fetch subcategories')
+    }
+    
+    // Update sort_orders
+    const dbUpdates = reorderedSubcategories.map((subcategoryName, index) => {
+      const subcategoryRecord = subcategoriesList.find(sub => sub.name === subcategoryName)
+      
+      if (!subcategoryRecord) {
+        console.warn(`⚠️ Subcategory not found in DB: ${subcategoryName}`)
+        return null
+      }
+      
+      return supabase
+        .from('subcategories')
+        .update({ sort_order: index + 1 })
+        .eq('id', subcategoryRecord.id)
+    }).filter(Boolean)
+    
+    const results = await Promise.all(dbUpdates)
+    const errors = results.filter(result => result?.error)
+    
+    if (errors.length > 0) {
+      throw new Error(`Database update failed: ${errors.map(e => e.error?.message).join(', ')}`)
     }
   }
 
@@ -617,7 +1228,14 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
     const activeId = active.id as string
     const overId = over.id as string
 
-    // Get the category type to ensure we're only reordering within the same type
+    // 🎯 Check if we're dragging subcategories (format: "categoryName::subcategoryName")
+    const isSubcategoryDrag = activeId.includes('::') && overId.includes('::')
+    
+    if (isSubcategoryDrag) {
+      return handleSubcategoryDragEnd(activeId, overId)
+    }
+
+    // 🎯 Handle main category drag & drop
     const activeCategory = categories[activeId]
     const overCategory = categories[overId]
     
@@ -1385,26 +2003,61 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
                       strategy={verticalListSortingStrategy}
                     >
                       {getCategoriesByType('revenue').map((categoryName, index) => (
-                        <DraggableCategoryRow
-                          key={categoryName}
-                          categoryName={categoryName}
-                          index={index}
-                          categoryType="revenue"
-                          months={months}
-                          editingCell={editingCell}
-                          editValue={editValue}
-                          expandedCategories={expandedCategories}
-                          darkMode={darkMode}
-                          zenMode={zenMode}
-                          onCellClick={handleCellClick}
-                          onCellSave={handleCellSave}
-                          onToggleDetails={toggleCategoryDetails}
-                          onDeleteCategory={handleDeleteCategory}
-                          getCellValue={getCellValue}
-                          formatCurrency={formatCurrency}
-                          setEditValue={setEditValue}
-                          setEditingCell={setEditingCell}
-                        />
+                        <React.Fragment key={categoryName}>
+                          <DraggableCategoryRow
+                            key={categoryName}
+                            categoryName={categoryName}
+                            index={index}
+                            categoryType="revenue"
+                            months={months}
+                            editingCell={editingCell}
+                            editValue={editValue}
+                            expandedCategories={expandedCategories}
+                            darkMode={darkMode}
+                            zenMode={zenMode}
+                            onCellClick={handleCellClick}
+                            onCellSave={handleCellSave}
+                            onToggleDetails={toggleCategoryDetails}
+                            onDeleteCategory={handleDeleteCategory}
+                            getCellValue={getCellValue}
+                            formatCurrency={formatCurrency}
+                            setEditValue={setEditValue}
+                            setEditingCell={setEditingCell}
+                            getCategoryValidationStatus={getCategoryValidationStatus}
+                            validateCategoryMonth={validateCategoryMonth}
+                          />
+                          
+                          {/* Render subcategories when category is expanded */}
+                          {expandedCategories[categoryName] && (
+                            <SortableContext 
+                              items={getSubcategoriesList(categoryName).map(subName => `${categoryName}::${subName}`)}
+                              strategy={verticalListSortingStrategy}
+                            >
+                              {getSubcategoriesList(categoryName).map((subcategoryName, subIndex) => (
+                                <SubcategoryRow
+                                  key={`${categoryName}-${subcategoryName}`}
+                                  categoryName={categoryName}
+                                  subcategoryName={subcategoryName}
+                                  index={subIndex}
+                                  categoryType="revenue"
+                                  months={months}
+                                  editingCell={editingCell}
+                                  editValue={editValue}
+                                  darkMode={darkMode}
+                                  zenMode={zenMode}
+                                  onCellClick={handleSubcategoryCellClick}
+                                  onCellSave={handleCellSave}
+                                  onDeleteSubcategory={handleDeleteSubcategory}
+                                  onMoveSubcategory={handleMoveSubcategory}
+                                  getSubcategoryCellValue={getSubcategoryCellValue}
+                                  formatCurrency={formatCurrency}
+                                  setEditValue={setEditValue}
+                                  setEditingCell={setEditingCell}
+                                />
+                              ))}
+                            </SortableContext>
+                          )}
+                        </React.Fragment>
                       ))}
                     </SortableContext>
                   </tbody>
@@ -1565,26 +2218,61 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
                       strategy={verticalListSortingStrategy}
                     >
                       {getCategoriesByType('expense').map((categoryName, index) => (
-                        <DraggableCategoryRow
-                          key={categoryName}
-                          categoryName={categoryName}
-                          index={index}
-                          categoryType="expense"
-                          months={months}
-                          editingCell={editingCell}
-                          editValue={editValue}
-                          expandedCategories={expandedCategories}
-                          darkMode={darkMode}
-                          zenMode={zenMode}
-                          onCellClick={handleCellClick}
-                          onCellSave={handleCellSave}
-                          onToggleDetails={toggleCategoryDetails}
-                          onDeleteCategory={handleDeleteCategory}
-                          getCellValue={getCellValue}
-                          formatCurrency={formatCurrency}
-                          setEditValue={setEditValue}
-                          setEditingCell={setEditingCell}
-                        />
+                        <React.Fragment key={categoryName}>
+                          <DraggableCategoryRow
+                            key={categoryName}
+                            categoryName={categoryName}
+                            index={index}
+                            categoryType="expense"
+                            months={months}
+                            editingCell={editingCell}
+                            editValue={editValue}
+                            expandedCategories={expandedCategories}
+                            darkMode={darkMode}
+                            zenMode={zenMode}
+                            onCellClick={handleCellClick}
+                            onCellSave={handleCellSave}
+                            onToggleDetails={toggleCategoryDetails}
+                            onDeleteCategory={handleDeleteCategory}
+                            getCellValue={getCellValue}
+                            formatCurrency={formatCurrency}
+                            setEditValue={setEditValue}
+                            setEditingCell={setEditingCell}
+                            getCategoryValidationStatus={getCategoryValidationStatus}
+                            validateCategoryMonth={validateCategoryMonth}
+                          />
+                          
+                          {/* Render subcategories when category is expanded */}
+                          {expandedCategories[categoryName] && (
+                            <SortableContext 
+                              items={getSubcategoriesList(categoryName).map(subName => `${categoryName}::${subName}`)}
+                              strategy={verticalListSortingStrategy}
+                            >
+                              {getSubcategoriesList(categoryName).map((subcategoryName, subIndex) => (
+                                <SubcategoryRow
+                                  key={`${categoryName}-${subcategoryName}`}
+                                  categoryName={categoryName}
+                                  subcategoryName={subcategoryName}
+                                  index={subIndex}
+                                  categoryType="expense"
+                                  months={months}
+                                  editingCell={editingCell}
+                                  editValue={editValue}
+                                  darkMode={darkMode}
+                                  zenMode={zenMode}
+                                  onCellClick={handleSubcategoryCellClick}
+                                  onCellSave={handleCellSave}
+                                  onDeleteSubcategory={handleDeleteSubcategory}
+                                  onMoveSubcategory={handleMoveSubcategory}
+                                  getSubcategoryCellValue={getSubcategoryCellValue}
+                                  formatCurrency={formatCurrency}
+                                  setEditValue={setEditValue}
+                                  setEditingCell={setEditingCell}
+                                />
+                              ))}
+                            </SortableContext>
+                          )}
+                        </React.Fragment>
                       ))}
                     </SortableContext>
                   </tbody>

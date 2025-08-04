@@ -31,6 +31,7 @@ export const AdminPage: React.FC = () => {
   const {
     categories,
     createCategory,
+    createSubcategory,
     deleteCategory,
     exportData,
     importData,
@@ -106,29 +107,17 @@ export const AdminPage: React.FC = () => {
     }
 
     try {
-      const { error } = await supabase
-        .from('subcategories')
-        .insert({
-          name: newSubcategoryName,
-          category_id: selectedCategoryId
-        })
-
-      if (error) throw error
+      await createSubcategory({
+        name: newSubcategoryName.trim(),
+        categoryId: selectedCategoryId
+      })
 
       setNewSubcategoryName('')
       setSelectedCategoryId('')
       loadSubcategories()
-      
-      toast({
-        title: "✅ Subcategoria creata",
-        description: `${newSubcategoryName} aggiunta`
-      })
     } catch (err: any) {
-      toast({
-        title: "❌ Errore creazione subcategoria",
-        description: err.message,
-        variant: "destructive"
-      })
+      // Error handling is done in the hook
+      console.error('Error creating subcategory:', err)
     }
   }
 
@@ -244,7 +233,7 @@ export const AdminPage: React.FC = () => {
                 >
                   <option value="">Seleziona categoria padre...</option>
                   {Object.entries(categories).map(([name, data]) => (
-                    <option key={name} value={data.id || name}>
+                    <option key={name} value={data.id}>
                       {name} ({getCategoryType(data.type).label})
                     </option>
                   ))}
