@@ -1,0 +1,83 @@
+{
+  "environments": {
+    "production": {
+      "branch": "main",
+      "url": "https://finanza-react-app.pages.dev",
+      "buildCommand": "npm run build",
+      "purgeCache": true,
+      "env": {
+        "NODE_ENV": "production",
+        "VITE_APP_ENV": "production"
+      }
+    },
+    "staging": {
+      "branch": "staging",
+      "url": "https://staging.finanza-react-app.pages.dev",
+      "buildCommand": "npm run build",
+      "purgeCache": false,
+      "env": {
+        "NODE_ENV": "production",
+        "VITE_APP_ENV": "staging"
+      }
+    },
+    "development": {
+      "branch": "develop",
+      "url": "https://develop.finanza-react-app.pages.dev",
+      "buildCommand": "npm run build:dev",
+      "purgeCache": false,
+      "env": {
+        "NODE_ENV": "development",
+        "VITE_APP_ENV": "development"
+      }
+    },
+    "preview": {
+      "branch": "*",
+      "url": "https://{branch}.finanza-react-app.pages.dev",
+      "buildCommand": "npm run build:dev",
+      "purgeCache": false,
+      "env": {
+        "NODE_ENV": "development",
+        "VITE_APP_ENV": "preview"
+      }
+    }
+  },
+  "project": {
+    "name": "finanza-react-app",
+    "accountId": "8a6fdb9f42fa0fdbbb99dc93536c249d",
+    "compatibility_date": "2024-12-19"
+  },
+  "build": {
+    "outputDirectory": "dist",
+    "nodeVersion": "20"
+  },
+  "deployment": {
+    "retries": 3,
+    "timeout": 300,
+    "maxFileSize": "25MB"
+  },
+  "cache": {
+    "purgeDelay": 10,
+    "patterns": {
+      "assets": {
+        "path": "/assets/*",
+        "maxAge": 31536000,
+        "immutable": true
+      },
+      "scripts": {
+        "path": "/*.js",
+        "maxAge": 31536000,
+        "immutable": true
+      },
+      "styles": {
+        "path": "/*.css",
+        "maxAge": 31536000,
+        "immutable": true
+      },
+      "html": {
+        "path": "/*.html",
+        "maxAge": 0,
+        "mustRevalidate": true
+      }
+    }
+  }
+}
