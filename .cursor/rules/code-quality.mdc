@@ -1,0 +1,44 @@
+---
+alwaysApply: true
+---
+
+# Code Quality Standards for ORTI Finance
+
+## TypeScript Strict Rules
+- No `any` types except for legacy compatibility
+- Always use `generate_typescript_type` for Supabase schema changes
+- Interface everything, especially financial data structures
+
+## Performance Requirements
+- Memoize all expensive calculations with proper dependencies
+- Use `useCallback` for event handlers to prevent re-renders
+- Implement real-time subscriptions with proper cleanup
+- Optimistic updates for better UX
+
+## Error Handling Standards
+```typescript
+// Always handle loading and error states
+if (loading) return <LoadingSpinner />
+if (error) return <ErrorMessage error={error} />
+
+// Specific toast messages, not generic
+toast.error('Failed to save entry for category: ' + categoryName)
+```
+
+## Testing with Real Data
+- NEVER use mock data - always test with actual Supabase data
+- Test filter combinations (consolidated, projections, all)
+- Validate financial calculations with known expected results
+- Test responsive design on actual mobile devices
+
+## Code Organization
+- One main dashboard component (CollapsibleFinanceDashboard.tsx)
+- Single utility components for specific tasks (import, export, editing)
+- Custom hooks for all Supabase operations
+- Shared utilities for data transformation
+
+## Security Checklist
+- Validate all user inputs before database operations
+- Use Row Level Security (RLS) policies  
+- Never log sensitive financial data
+- Environment variables for API keys

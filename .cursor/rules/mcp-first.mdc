@@ -1,0 +1,4 @@
+---
+alwaysApply: true
+---
+ALWAYS use MCP commands before writing code. Think of MCP as your development REPL.

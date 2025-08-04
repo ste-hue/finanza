@@ -1,0 +1,32 @@
+---
+alwaysApply: true
+---
+
+# Supabase Database Patterns
+
+## Critical Field: is_projection
+- `false` = consolidated (real/historical data)
+- `true` = projections/forecasts
+- ALWAYS validate this field when querying/inserting entries
+
+## Month Status Logic - Data-Driven (not date-based)
+```javascript
+// Agosto 2025 example:
+if (month === currentMonth) return 'current' // August = Attuale
+if (month < currentMonth && hasProjections) return 'current' // July not consolidated yet
+if (hasConsolidated && !hasProjections) return 'consolidated' // Fully verified
+return 'projections' // Future months
+```
+
+## Required SQL Patterns
+```sql
+-- Always JOIN to get full context
+SELECT e.*, c.name as category_name, c.type_id 
+FROM entries e
+JOIN subcategories s ON e.subcategory_id = s.id
+JOIN categories c ON s.category_id = c.id
+WHERE e.year = ? AND e.is_projection = ?;
+
+-- Check data integrity
+SELECT is_projection, COUNT(*) FROM entries GROUP BY is_projection;
+```

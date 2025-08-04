@@ -1,0 +1,84 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+# But allow src/lib/ (application source code)
+!src/lib/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn-integrity
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+server.log
+local_schema.sql
+
+# Files not needed for Cloudflare Pages deployment
+# Excel files (business data)
+*.xlsx
+~$*.xlsx
+
+# Python scripts (data processing)
+*.py
+
+# SQL files (database setup)
+*.sql
+
+# JSON data files (business data)
+/complete_excel_data.json
+/excel_data.json
+
+# Shell scripts (local development)
+*.sh
+
+# Credentials and sensitive files
+credentials/
+*.json
+!package*.json
+!tsconfig*.json
+!components.json
+!orti-finance-compass/**/*.json
+
+# Development utilities
+/orti
+/insert_*
+/read_*
+
+# Temporary files
+~$*

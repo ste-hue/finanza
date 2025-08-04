@@ -1,0 +1,31 @@
+---
+alwaysApply: true
+---
+
+# Sequential Thinking Usage Patterns
+
+## When to Use Sequential Thinking MCP
+- Complex features with 3+ distinct steps
+- Business logic changes affecting multiple components
+- Database schema modifications
+- Financial calculation logic changes
+- Multi-step data import/export processes
+
+## How to Use Effectively
+1. Start with problem decomposition
+2. Build reasoning chains step-by-step  
+3. Let AI create its own context and prompts
+4. Use for planning before coding, not during coding
+
+## Example Trigger Scenarios
+- "Implement consolidation workflow for past months"
+- "Add new category type with proper relationships"
+- "Design Excel import with validation and error handling"
+- "Modify month status logic to handle edge cases"
+
+## Pattern
+```
+Sequential Thinking → Plan → MCP Database Exploration → Code Implementation
+```
+
+Think of it as your planning REPL - the AI builds its own reasoning chain to solve complex problems methodically.
