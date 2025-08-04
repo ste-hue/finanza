@@ -1,0 +1,180 @@
+name: Deploy to Cloudflare Pages
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - staging
+    paths:
+      - 'orti-finance-compass/**'
+      - '.github/workflows/deploy-cloudflare.yml'
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'orti-finance-compass/**'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'preview'
+        type: choice
+        options:
+          - production
+          - staging
+          - preview
+
+env:
+  NODE_VERSION: '20'
+  PROJECT_NAME: 'finanza-react-app'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy to Cloudflare Pages
+
+    # Set environment based on branch or input
+    environment:
+      name: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'production') || (github.ref == 'refs/heads/staging' && 'staging') || 'preview' }}
+      url: ${{ steps.deploy.outputs.url }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: orti-finance-compass/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd orti-finance-compass
+          npm ci
+
+      - name: Set deployment variables
+        id: vars
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "deployment_name=pr-${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+            echo "branch=pr-${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+            echo "environment=preview" >> $GITHUB_OUTPUT
+            echo "url=https://pr-${{ github.event.pull_request.number }}.${{ env.PROJECT_NAME }}.pages.dev" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "deployment_name=production" >> $GITHUB_OUTPUT
+            echo "branch=main" >> $GITHUB_OUTPUT
+            echo "environment=production" >> $GITHUB_OUTPUT
+            echo "url=https://${{ env.PROJECT_NAME }}.pages.dev" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/staging" ]]; then
+            echo "deployment_name=staging" >> $GITHUB_OUTPUT
+            echo "branch=staging" >> $GITHUB_OUTPUT
+            echo "environment=staging" >> $GITHUB_OUTPUT
+            echo "url=https://staging.${{ env.PROJECT_NAME }}.pages.dev" >> $GITHUB_OUTPUT
+          else
+            BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/} | sed 's/[^a-zA-Z0-9-]/-/g' | tr '[:upper:]' '[:lower:]')
+            echo "deployment_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+            echo "branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
+            echo "environment=preview" >> $GITHUB_OUTPUT
+            echo "url=https://$BRANCH_NAME.${{ env.PROJECT_NAME }}.pages.dev" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build project
+        run: |
+          cd orti-finance-compass
+          if [[ "${{ steps.vars.outputs.environment }}" == "production" ]]; then
+            npm run build
+          else
+            npm run build:dev
+          fi
+        env:
+          NODE_ENV: ${{ steps.vars.outputs.environment }}
+          VITE_APP_ENV: ${{ steps.vars.outputs.environment }}
+
+      - name: Deploy to Cloudflare Pages
+        id: deploy
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: ${{ env.PROJECT_NAME }}
+          directory: orti-finance-compass/dist
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          deploymentName: ${{ steps.vars.outputs.deployment_name }}
+          branch: ${{ steps.vars.outputs.branch }}
+
+      - name: Purge Cloudflare cache (production only)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          response=$(curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${{ secrets.CLOUDFLARE_ZONE_ID }}/purge_cache" \
+            -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            --data '{"purge_everything":true}')
+
+          if echo "$response" | grep -q '"success":true'; then
+            echo "✅ Cache purged successfully!"
+          else
+            echo "⚠️ Cache purge failed (non-critical):"
+            echo "$response"
+          fi
+
+      - name: Add deployment comment to PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const deploymentUrl = '${{ steps.vars.outputs.url }}';
+            const comment = `### 🚀 Deployment Preview
+
+            **Preview URL:** ${deploymentUrl}
+            **Branch:** \`${{ github.head_ref }}\`
+            **Status:** ✅ Deployed successfully
+
+            _This preview will be updated automatically with new commits._`;
+
+            // Find existing comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes('🚀 Deployment Preview')
+            );
+
+            if (botComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: comment
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: comment
+              });
+            }
+
+      - name: Create deployment summary
+        run: |
+          echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment:** ${{ steps.vars.outputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch:** ${{ steps.vars.outputs.branch }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **URL:** ${{ steps.vars.outputs.url }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Time:** $(date)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "✅ **Production deployment complete with cache purge**" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ **Preview deployment complete**" >> $GITHUB_STEP_SUMMARY
+          fi
