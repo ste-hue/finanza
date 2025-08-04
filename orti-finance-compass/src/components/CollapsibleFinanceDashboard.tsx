@@ -38,6 +38,7 @@ import { DataExportImportModal } from '@/components/DataExportImportModal'
 import { MobileBottomNav } from '@/components/MobileBottomNav'
 import { MobileDataCard } from '@/components/MobileDataCard'
 import { MobileChart } from '@/components/MobileChart'
+import { FinancialCharts } from '@/components/FinancialCharts'
 import { useSwipeGesture } from '@/hooks/useSwipeGesture'
 import { cn } from '@/lib/utils'
 import {
@@ -2369,110 +2370,16 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
 
         {/* 📊 GRAFICI - Se attivati */}
         {showCharts && !zenMode && (
-          <Card className={cn(
-            "mb-4 md:mb-6 transition-all duration-300",
-            darkMode ? "bg-gray-800 border-gray-700" : ""
-          )}>
-            <CardHeader>
-              <div className="flex items-center space-x-3">
-                <BarChart3 className={cn(
-                  "w-6 h-6",
-                  darkMode ? "text-purple-400" : "text-purple-600"
-                )} />
-                <h2 className={cn(
-                  "text-lg md:text-xl font-semibold",
-                  darkMode ? "text-purple-300" : "text-purple-700"
-                )}>
-                  ANDAMENTO ANNUALE
-                </h2>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                {/* Grafico a barre semplice */}
-                <div>
-                  <h3 className={cn(
-                    "text-sm font-medium mb-3",
-                    darkMode ? "text-gray-300" : "text-gray-700"
-                  )}>
-                    Confronto Mensile
-                  </h3>
-                  <div className="relative h-48 md:h-64">
-                    <div className="absolute inset-0 flex items-end justify-between gap-1">
-                      {months.map((_, index) => {
-                        const entrateMonth = getCategoriesByType('revenue').reduce((sum, cat) => {
-                          return sum + getCellValue(cat, index + 1)
-                        }, 0)
-                        const usciteMonth = getCategoriesByType('expense').reduce((sum, cat) => {
-                          return sum + getCellValue(cat, index + 1)
-                        }, 0)
-                        const maxValue = Math.max(...months.map((_, i) => {
-                          const e = getCategoriesByType('revenue').reduce((s, c) => s + getCellValue(c, i + 1), 0)
-                          const u = getCategoriesByType('expense').reduce((s, c) => s + getCellValue(c, i + 1), 0)
-                          return Math.max(e, u)
-                        }))
-                        
-                        return (
-                          <div key={index} className="flex-1 flex flex-col items-center gap-1">
-                            <div className="w-full flex gap-1">
-                              <div
-                                className={cn(
-                                  "flex-1 rounded-t transition-all duration-500",
-                                  darkMode ? "bg-green-500" : "bg-green-600"
-                                )}
-                                style={{
-                                  height: `${(entrateMonth / maxValue) * 100}%`,
-                                  minHeight: entrateMonth > 0 ? '4px' : '0'
-                                }}
-                              />
-                              <div
-                                className={cn(
-                                  "flex-1 rounded-t transition-all duration-500",
-                                  darkMode ? "bg-red-500" : "bg-red-600"
-                                )}
-                                style={{
-                                  height: `${(usciteMonth / maxValue) * 100}%`,
-                                  minHeight: usciteMonth > 0 ? '4px' : '0'
-                                }}
-                              />
-                            </div>
-                            <div className={cn(
-                              "text-xs",
-                              darkMode ? "text-gray-400" : "text-gray-600"
-                            )}>
-                              {months[index].slice(0, 1)}
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-center gap-6 mt-4">
-                    <div className="flex items-center gap-2">
-                      <div className={cn(
-                        "w-3 h-3 rounded",
-                        darkMode ? "bg-green-500" : "bg-green-600"
-                      )} />
-                      <span className={cn(
-                        "text-sm",
-                        darkMode ? "text-gray-300" : "text-gray-600"
-                      )}>Entrate</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className={cn(
-                        "w-3 h-3 rounded",
-                        darkMode ? "bg-red-500" : "bg-red-600"
-                      )} />
-                      <span className={cn(
-                        "text-sm",
-                        darkMode ? "text-gray-300" : "text-gray-600"
-                      )}>Uscite</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="mb-4 md:mb-6">
+            <FinancialCharts
+              categories={categories}
+              months={months}
+              darkMode={darkMode}
+              getCellValue={getCellValue}
+              getCategoriesByType={getCategoriesByType}
+              formatCurrency={formatCurrency}
+            />
+          </div>
         )}
 
         {/* 🏦 SALDI BANCARI - Sezione dinamica */}
