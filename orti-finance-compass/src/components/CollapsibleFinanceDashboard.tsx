@@ -76,6 +76,7 @@ const SubcategoryRow: React.FC<{
   formatCurrency: (value: number) => string
   setEditValue: (value: string) => void
   setEditingCell: (cellId: string | null) => void
+  calculateSubcategoryYearlyTotal: (categoryName: string, subcategoryName: string) => number
 }> = ({
   categoryName,
   subcategoryName,
@@ -93,7 +94,8 @@ const SubcategoryRow: React.FC<{
   getSubcategoryCellValue,
   formatCurrency,
   setEditValue,
-  setEditingCell
+  setEditingCell,
+  calculateSubcategoryYearlyTotal
 }) => {
   const {
     attributes,
@@ -215,6 +217,20 @@ const SubcategoryRow: React.FC<{
         )
       })}
 
+      {/* Yearly Total Cell */}
+      <td className={cn(
+        "p-1 md:p-2 text-center font-semibold border-l-2",
+        categoryType === 'revenue' 
+          ? (darkMode ? "border-green-600/30" : "border-green-500/30")
+          : categoryType === 'balance'
+          ? (darkMode ? "border-purple-600/30" : "border-purple-500/30")
+          : (darkMode ? "border-red-600/30" : "border-red-500/30")
+      )}>
+        <span className={cn("text-sm", colorClass)}>
+          {formatCurrency(calculateSubcategoryYearlyTotal(categoryName, subcategoryName))}
+        </span>
+      </td>
+
       {!zenMode && (
         <td className="p-2 text-center">
           {onDeleteSubcategory && (
@@ -256,6 +272,7 @@ const DraggableCategoryRow: React.FC<{
   setEditingCell: (cellId: string | null) => void
   getCategoryValidationStatus?: (categoryName: string) => { hasIssues: boolean; issueMonths: number[] }
   validateCategoryMonth?: (categoryName: string, month: number) => { isValid: boolean; difference: number; categoryTotal: number; subcategorySum: number }
+  calculateCategoryYearlyTotal: (categoryName: string) => number
 }> = ({
   categoryName,
   index,
@@ -275,7 +292,8 @@ const DraggableCategoryRow: React.FC<{
   setEditValue,
   setEditingCell,
   getCategoryValidationStatus,
-  validateCategoryMonth
+  validateCategoryMonth,
+  calculateCategoryYearlyTotal
 }) => {
   const {
     attributes,
@@ -426,6 +444,20 @@ const DraggableCategoryRow: React.FC<{
           </td>
         )
       })}
+
+      {/* Yearly Total Cell */}
+      <td className={cn(
+        "p-1 md:p-2 text-center font-bold border-l-2",
+        categoryType === 'revenue' 
+          ? (darkMode ? "border-green-600/50" : "border-green-500/50")
+          : categoryType === 'balance'
+          ? (darkMode ? "border-purple-600/50" : "border-purple-500/50")
+          : (darkMode ? "border-red-600/50" : "border-red-500/50")
+      )}>
+        <span className={cn("font-bold", colorClass)}>
+          {formatCurrency(calculateCategoryYearlyTotal(categoryName))}
+        </span>
+      </td>
 
       {/* Delete button */}
       {!zenMode && (
@@ -750,6 +782,24 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
       default:
         return subcategoryMonthData.consolidated + subcategoryMonthData.projections
     }
+  }
+
+  // 📊 Calculate yearly total for a category
+  const calculateCategoryYearlyTotal = (categoryName: string): number => {
+    let total = 0
+    for (let month = 1; month <= 12; month++) {
+      total += getCellValue(categoryName, month)
+    }
+    return total
+  }
+
+  // 📊 Calculate yearly total for a subcategory
+  const calculateSubcategoryYearlyTotal = (categoryName: string, subcategoryName: string): number => {
+    let total = 0
+    for (let month = 1; month <= 12; month++) {
+      total += getSubcategoryCellValue(categoryName, subcategoryName, month)
+    }
+    return total
   }
 
   // 🧮 Check if category has subcategories with data
@@ -1994,6 +2044,16 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
                           </th>
                         )
                       })}
+                      {/* Colonna Totale Anno */}
+                      <th className={cn(
+                        "text-center p-2 font-medium min-w-[80px] md:min-w-[100px] border-l-2",
+                        darkMode 
+                          ? "text-gray-300 border-green-600/50" 
+                          : "text-slate-700 border-green-500/50"
+                      )}>
+                        <span className="hidden md:inline">Totale Anno</span>
+                        <span className="md:hidden">Tot</span>
+                      </th>
                       {!zenMode && <th className="w-16 md:w-20"></th>}
                     </tr>
                   </thead>
@@ -2025,6 +2085,7 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
                             setEditingCell={setEditingCell}
                             getCategoryValidationStatus={getCategoryValidationStatus}
                             validateCategoryMonth={validateCategoryMonth}
+                            calculateCategoryYearlyTotal={calculateCategoryYearlyTotal}
                           />
                           
                           {/* Render subcategories when category is expanded */}
@@ -2053,6 +2114,7 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
                                   formatCurrency={formatCurrency}
                                   setEditValue={setEditValue}
                                   setEditingCell={setEditingCell}
+                                  calculateSubcategoryYearlyTotal={calculateSubcategoryYearlyTotal}
                                 />
                               ))}
                             </SortableContext>
@@ -2209,6 +2271,16 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
                           </th>
                         )
                       })}
+                      {/* Colonna Totale Anno */}
+                      <th className={cn(
+                        "text-center p-2 font-medium min-w-[80px] md:min-w-[100px] border-l-2",
+                        darkMode 
+                          ? "text-gray-300 border-red-600/50" 
+                          : "text-slate-700 border-red-500/50"
+                      )}>
+                        <span className="hidden md:inline">Totale Anno</span>
+                        <span className="md:hidden">Tot</span>
+                      </th>
                       {!zenMode && <th className="w-16 md:w-20"></th>}
                     </tr>
                   </thead>
@@ -2240,6 +2312,7 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
                             setEditingCell={setEditingCell}
                             getCategoryValidationStatus={getCategoryValidationStatus}
                             validateCategoryMonth={validateCategoryMonth}
+                            calculateCategoryYearlyTotal={calculateCategoryYearlyTotal}
                           />
                           
                           {/* Render subcategories when category is expanded */}
@@ -2268,6 +2341,7 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
                                   formatCurrency={formatCurrency}
                                   setEditValue={setEditValue}
                                   setEditingCell={setEditingCell}
+                                  calculateSubcategoryYearlyTotal={calculateSubcategoryYearlyTotal}
                                 />
                               ))}
                             </SortableContext>
@@ -2569,6 +2643,7 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
                           formatCurrency={formatCurrency}
                           setEditValue={setEditValue}
                           setEditingCell={setEditingCell}
+                          calculateCategoryYearlyTotal={calculateCategoryYearlyTotal}
                         />
                       ))}
                     </div>
