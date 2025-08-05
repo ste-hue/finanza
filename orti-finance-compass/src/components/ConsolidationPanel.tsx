@@ -9,6 +9,7 @@ interface ConsolidationPanelProps {
   year: number
   month: number
   monthName: string
+  selectedCompany?: string
   onConsolidated?: () => void
 }
 
@@ -16,6 +17,7 @@ export const ConsolidationPanel: React.FC<ConsolidationPanelProps> = ({
   year,
   month,
   monthName,
+  selectedCompany = 'ORTI',
   onConsolidated
 }) => {
   const [consolidating, setConsolidating] = useState(false)

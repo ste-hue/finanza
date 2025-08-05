@@ -483,7 +483,15 @@ const DraggableCategoryRow: React.FC<{
 }
 
 // 🎯 COLLAPSIBLE FINANCE DASHBOARD - Structured sections with CRUD
-export const CollapsibleFinanceDashboard: React.FC = () => {
+interface CollapsibleFinanceDashboardProps {
+  selectedCompany?: string
+  onCompanyChange?: (company: string) => void
+}
+
+export const CollapsibleFinanceDashboard: React.FC<CollapsibleFinanceDashboardProps> = ({
+  selectedCompany = 'ORTI',
+  onCompanyChange
+}) => {
   const [selectedYear, setSelectedYear] = useState(2025)
   const [editingCell, setEditingCell] = useState<string | null>(null)
   const [editValue, setEditValue] = useState('')
@@ -530,7 +538,7 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
     updateCategoriesOrderOptimistic,
     updateSubcategoriesOrderOptimistic,
     loadData
-  } = useSupabaseFinance(selectedYear)
+  } = useSupabaseFinance(selectedYear, selectedCompany)
 
   // 🔗 Sync viewFilter with viewMode from hook
   React.useEffect(() => {
@@ -1735,7 +1743,7 @@ export const CollapsibleFinanceDashboard: React.FC = () => {
           {/* Company & Year Info */}
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div className={cn("text-base md:text-lg", darkMode ? "text-gray-300" : "text-slate-600")}>
-              ORTI {selectedYear}
+              {selectedCompany} {selectedYear}
             </div>
             
             {/* Year Selector - Responsive */}

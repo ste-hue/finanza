@@ -7,17 +7,18 @@ import { Navigation } from '@/components/Navigation';
 const Index = () => {
   const [currentPage, setCurrentPage] = useState<'dashboard' | 'consolidation' | 'admin'>('dashboard');
   const [darkMode, setDarkMode] = useState(false);
+  const [selectedCompany, setSelectedCompany] = useState('ORTI');
 
   const renderCurrentPage = () => {
     switch (currentPage) {
       case 'dashboard':
-        return <CollapsibleFinanceDashboard />;
+        return <CollapsibleFinanceDashboard selectedCompany={selectedCompany} onCompanyChange={setSelectedCompany} />;
       case 'consolidation':
-        return <ConsolidationPage />;
+        return <ConsolidationPage selectedCompany={selectedCompany} onCompanyChange={setSelectedCompany} />;
       case 'admin':
-        return <AdminPage />;
+        return <AdminPage selectedCompany={selectedCompany} onCompanyChange={setSelectedCompany} />;
       default:
-        return <CollapsibleFinanceDashboard />;
+        return <CollapsibleFinanceDashboard selectedCompany={selectedCompany} onCompanyChange={setSelectedCompany} />;
     }
   };
 
@@ -29,6 +30,8 @@ const Index = () => {
         currentPage={currentPage}
         onNavigate={setCurrentPage}
         darkMode={darkMode}
+        selectedCompany={selectedCompany}
+        onCompanyChange={setSelectedCompany}
       />
       
       <main>

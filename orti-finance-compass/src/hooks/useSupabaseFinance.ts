@@ -14,7 +14,7 @@ interface FinanceData {
   subcategoryMonthlyData: { [categoryName: string]: { [subcategoryName: string]: { [month: number]: { consolidated: number; projections: number } } } }
 }
 
-export const useSupabaseFinance = (year: number = 2025) => {
+export const useSupabaseFinance = (year: number = 2025, companyName: string = 'ORTI') => {
   const [data, setData] = useState<FinanceData>({
     consolidated: { revenues: 0, expenses: 0 },
     projections: { revenues: 0, expenses: 0 },
@@ -36,18 +36,18 @@ export const useSupabaseFinance = (year: number = 2025) => {
     setError(null)
     
     try {
-      // 🏢 First get ORTI company ID
+      // 🏢 First get company ID
       const { data: company, error: companyError } = await supabase
         .from('companies')
         .select('id')
-        .eq('name', 'ORTI')
+        .eq('name', companyName)
         .single()
 
       if (companyError || !company) {
-        throw new Error('Impossibile trovare la società ORTI nel database')
+        throw new Error(`Impossibile trovare la società ${companyName} nel database`)
       }
 
-      // 📂 Load ALL categories for ORTI (regardless of entries)
+      // 📂 Load ALL categories for company (regardless of entries)
       const { data: categoriesData, error: categoriesError } = await supabase
         .from('categories')
         .select(`
@@ -106,7 +106,7 @@ export const useSupabaseFinance = (year: number = 2025) => {
     } finally {
       setLoading(false)
     }
-  }, [year])
+  }, [year, companyName])
 
   // 🔄 Process categories and entries separately into organized structure
   const processDataSeparately = (categoriesData: any[], entriesData: any[]): FinanceData => {
@@ -337,11 +337,22 @@ export const useSupabaseFinance = (year: number = 2025) => {
     try {
       console.log('💾 Saving entry:', entryData)
       
-      // 🔧 Simplified: First find category, then subcategory
+      // 🔧 First get company, then find category for that company
+      const { data: company, error: companyError } = await supabase
+        .from('companies')
+        .select('id')
+        .eq('name', companyName)
+        .single()
+
+      if (companyError || !company) {
+        throw new Error(`Company '${companyName}' not found`)
+      }
+
       const { data: category, error: categoryError } = await supabase
         .from('categories')
         .select('id')
         .eq('name', entryData.categoryName)
+        .eq('company_id', company.id)
         .single()
 
       if (categoryError) {
@@ -428,7 +439,7 @@ export const useSupabaseFinance = (year: number = 2025) => {
         variant: "destructive"
       })
     }
-  }, [year, loadData])
+  }, [year, companyName, loadData])
 
   // ➕ Create new category
   const createCategory = useCallback(async (categoryData: {
@@ -439,15 +450,15 @@ export const useSupabaseFinance = (year: number = 2025) => {
     try {
       console.log('➕ Creating category:', categoryData)
       
-      // First, get the ORTI company ID from database
+      // First, get the current company ID from database
       const { data: company, error: companyError } = await supabase
         .from('companies')
         .select('id')
-        .eq('name', 'ORTI')
+        .eq('name', companyName)
         .single()
 
       if (companyError || !company) {
-        throw new Error('Impossibile trovare la società ORTI nel database')
+        throw new Error(`Impossibile trovare la società ${companyName} nel database`)
       }
       
       // Check if category with same name already exists
@@ -508,7 +519,7 @@ export const useSupabaseFinance = (year: number = 2025) => {
       })
       throw err
     }
-  }, [loadData])
+  }, [companyName, loadData])
 
   // ➕ Create new subcategory
   const createSubcategory = useCallback(async (subcategoryData: {
@@ -572,11 +583,23 @@ export const useSupabaseFinance = (year: number = 2025) => {
     try {
       console.log('🗑️ Deleting category:', categoryName)
       
-      // First get category ID (handle duplicates gracefully)
+      // First get company ID
+      const { data: company, error: companyError } = await supabase
+        .from('companies')
+        .select('id')
+        .eq('name', companyName)
+        .single()
+
+      if (companyError || !company) {
+        throw new Error(`Company '${companyName}' not found`)
+      }
+
+      // Get category ID for this company
       const { data: categories, error: categoryError } = await supabase
         .from('categories')
         .select('id')
         .eq('name', categoryName)
+        .eq('company_id', company.id)
         .limit(1)
 
       if (categoryError) throw categoryError
@@ -628,7 +651,7 @@ export const useSupabaseFinance = (year: number = 2025) => {
       })
       throw err
     }
-  }, [loadData])
+  }, [companyName, loadData])
 
   // ↕️ Update category order
   const updateCategoryOrder = useCallback(async (categoryName: string, direction: 'up' | 'down') => {

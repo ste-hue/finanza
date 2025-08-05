@@ -20,7 +20,15 @@ import {
 import { toast } from '@/hooks/use-toast'
 import { supabase } from '@/lib/supabase'
 
-export const AdminPage: React.FC = () => {
+interface AdminPageProps {
+  selectedCompany?: string
+  onCompanyChange?: (company: string) => void
+}
+
+export const AdminPage: React.FC<AdminPageProps> = ({ 
+  selectedCompany = 'ORTI',
+  onCompanyChange 
+}) => {
   const [selectedYear, setSelectedYear] = useState(2025)
   const [newCategoryName, setNewCategoryName] = useState('')
   const [newSubcategoryName, setNewSubcategoryName] = useState('')
@@ -36,7 +44,7 @@ export const AdminPage: React.FC = () => {
     exportData,
     importData,
     loadData
-  } = useSupabaseFinance(selectedYear)
+  } = useSupabaseFinance(selectedYear, selectedCompany)
 
   // Load subcategories
   const loadSubcategories = async () => {

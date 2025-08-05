@@ -10,7 +10,15 @@ import { ProjectionBackfillPanel } from '@/components/ProjectionBackfillPanel'
 import { useConsolidation } from '@/hooks/useConsolidation'
 import { Calendar, TrendingUp, History, AlertTriangle, Filter } from 'lucide-react'
 
-export const ConsolidationPage: React.FC = () => {
+interface ConsolidationPageProps {
+  selectedCompany?: string
+  onCompanyChange?: (company: string) => void
+}
+
+export const ConsolidationPage: React.FC<ConsolidationPageProps> = ({ 
+  selectedCompany = 'ORTI',
+  onCompanyChange 
+}) => {
   const [selectedYear, setSelectedYear] = useState(2025)
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1)
   const [consolidationEvents, setConsolidationEvents] = useState([])
@@ -98,6 +106,7 @@ export const ConsolidationPage: React.FC = () => {
                         year={selectedYear}
                         month={monthNumber}
                         monthName={monthName}
+                        selectedCompany={selectedCompany}
                         onConsolidated={() => loadConsolidationEvents(selectedYear).then(setConsolidationEvents)}
                       />
                     ) : (
