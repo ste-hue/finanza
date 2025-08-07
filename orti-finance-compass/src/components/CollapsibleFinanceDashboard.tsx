@@ -1522,6 +1522,16 @@ export const CollapsibleFinanceDashboard: React.FC<CollapsibleFinanceDashboardPr
               
               {/* Controlli Essenziali */}
               <div className="flex items-center gap-2">
+                {/* Menu Mobile Toggle */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="md:hidden"
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                >
+                  {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                </Button>
+                
                 <Button
                   variant="outline"
                   size="sm"
@@ -1587,9 +1597,35 @@ export const CollapsibleFinanceDashboard: React.FC<CollapsibleFinanceDashboardPr
                 Previsionale
               </Button>
             </div>
+            
+            {/* Menu Mobile Semplificato */}
+            {mobileMenuOpen && (
+              <div className="md:hidden mt-4 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg space-y-3">
+                <div className="text-xs text-gray-500 dark:text-gray-400 font-medium">AZIONI RAPIDE</div>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowCharts(!showCharts)}
+                    className="justify-start text-xs"
+                  >
+                    <BarChart3 className="h-3 w-3 mr-2" />
+                    {showCharts ? 'Nascondi' : 'Mostra'} Grafici
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowMobileExportModal(true)}
+                    className="justify-start text-xs"
+                  >
+                    <FileJson className="h-3 w-3 mr-2" />
+                    Export/Import
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
-
-
 
           {/* PANNELLO SALDO DI RIFERIMENTO - FASE 2 */}
           <div className={cn(
