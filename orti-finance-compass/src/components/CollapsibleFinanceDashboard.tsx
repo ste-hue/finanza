@@ -1626,6 +1626,7 @@ export const CollapsibleFinanceDashboard: React.FC<CollapsibleFinanceDashboardPr
               </div>
             )}
           </div>
+          )}
 
           {/* PANNELLO SALDO DI RIFERIMENTO - FASE 2 */}
           <div className={cn(
@@ -1823,7 +1824,6 @@ export const CollapsibleFinanceDashboard: React.FC<CollapsibleFinanceDashboardPr
             </div>
           )}
         </div>
-        )}
 
         {/* Zen Mode Header - Minimal */}
         {zenMode && (
@@ -2800,7 +2800,6 @@ export const CollapsibleFinanceDashboard: React.FC<CollapsibleFinanceDashboardPr
           onOpenChange={setShowMobileExportModal}
         />
       )}
-    </div>
     </DndContext>
   )
 }
