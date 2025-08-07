@@ -201,7 +201,7 @@ export const VarianceAnalysis: React.FC<VarianceAnalysisProps> = ({
                   <span className="font-mono text-sm font-bold">{formatCurrency(varianceData.actual.total_revenue)}</span>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-primary/10 rounded-lg border border-primary/20">
-                  <span className="text-sm font-medium">📊 Differenza:</span>
+                  <span className="text-sm font-medium">📊 Cash Flow:</span>
                   <span className={`font-mono text-sm font-bold ${varianceData.variance.revenue_variance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {varianceData.variance.revenue_variance > 0 ? '+' : ''}{formatCurrency(varianceData.variance.revenue_variance)}
                   </span>
@@ -241,7 +241,7 @@ export const VarianceAnalysis: React.FC<VarianceAnalysisProps> = ({
                   <span className="font-mono text-sm font-bold">{formatCurrency(varianceData.actual.total_expenses)}</span>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-primary/10 rounded-lg border border-primary/20">
-                  <span className="text-sm font-medium">📊 Differenza:</span>
+                  <span className="text-sm font-medium">📊 Cash Flow:</span>
                   <span className={`font-mono text-sm font-bold ${varianceData.variance.expense_variance <= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {varianceData.variance.expense_variance > 0 ? '+' : ''}{formatCurrency(varianceData.variance.expense_variance)}
                   </span>
@@ -269,7 +269,7 @@ export const VarianceAnalysis: React.FC<VarianceAnalysisProps> = ({
                       <th className="text-left p-3 font-medium">Categoria</th>
                       <th className="text-right p-3 font-medium">Previsto</th>
                       <th className="text-right p-3 font-medium">Reale</th>
-                      <th className="text-right p-3 font-medium">Differenza</th>
+                      <th className="text-right p-3 font-medium">Cash Flow</th>
                       <th className="text-center p-3 font-medium">Variazione %</th>
                     </tr>
                   </thead>

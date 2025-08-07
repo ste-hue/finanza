@@ -10,7 +10,7 @@ import {
 } from 'lucide-react'
 
 interface MobileBottomNavProps {
-  onScrollToSection: (section: 'entrate' | 'uscite' | 'differenza' | 'home') => void
+  onScrollToSection: (section: 'entrate' | 'uscite' | 'cashflow' | 'home') => void
   onToggleCharts: () => void
   onToggleMenu: () => void
   onExportImport: () => void

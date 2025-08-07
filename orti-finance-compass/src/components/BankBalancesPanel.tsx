@@ -21,7 +21,7 @@ export const BankBalancesPanel: React.FC<BankBalancesPanelProps> = ({
   darkMode = false,
   onTotalChange
 }) => {
-  const { balances, totalBalance, loading, error, updateBankBalance, formatCurrency } = useBankBalances(year, month)
+  const { balances, totalBalance, projectedBalance, nextMonthProjectedBalance, loading, error, updateBankBalance, formatCurrency } = useBankBalances(year, month)
   const [editingBank, setEditingBank] = useState<string | null>(null)
   const [editValue, setEditValue] = useState<string>('')
 
@@ -106,14 +106,43 @@ export const BankBalancesPanel: React.FC<BankBalancesPanelProps> = ({
             </div>
           </CardTitle>
           
-          <div className="text-right">
-            <div className={cn("text-2xl font-bold", darkMode ? "text-blue-300" : "text-blue-600")}>
-              {formatCurrency(totalBalance)}
+          <div className="text-right space-y-3">
+            {/* ULTIMO SALDO CONSOLIDATO */}
+            <div>
+              <div className={cn("text-lg font-bold", darkMode ? "text-blue-300" : "text-blue-600")}>
+                {formatCurrency(totalBalance)}
+              </div>
+              <Badge variant="default" className="mt-1">
+                <TrendingUp className="h-3 w-3 mr-1" />
+                Ultimo Saldo (31/07)
+              </Badge>
             </div>
-            <Badge variant={totalBalance > 0 ? "default" : "secondary"} className="mt-1">
-              <TrendingUp className="h-3 w-3 mr-1" />
-              Totale
-            </Badge>
+            
+            {/* SALDO PROIETTATO FINE MESE CORRENTE */}
+            {projectedBalance !== null && (
+              <div className="pt-2 border-t border-gray-200 dark:border-gray-600">
+                <div className={cn("text-xl font-bold", darkMode ? "text-purple-300" : "text-purple-600")}>
+                  {formatCurrency(projectedBalance)}
+                </div>
+                <Badge variant="outline" className={cn("mt-1", darkMode ? "text-purple-300 border-purple-400" : "text-purple-600 border-purple-300")}>
+                  <Calculator className="h-3 w-3 mr-1" />
+                  Proiettato Fine {getMonthName(month)} (31/{month.toString().padStart(2, '0')})
+                </Badge>
+              </div>
+            )}
+            
+            {/* SALDO PROIETTATO MESE SUCCESSIVO */}
+            {nextMonthProjectedBalance !== null && month < 12 && (
+              <div className="pt-2 border-t border-gray-200 dark:border-gray-600">
+                <div className={cn("text-lg font-semibold", darkMode ? "text-orange-300" : "text-orange-600")}>
+                  {formatCurrency(nextMonthProjectedBalance)}
+                </div>
+                <Badge variant="outline" className={cn("mt-1", darkMode ? "text-orange-300 border-orange-400" : "text-orange-600 border-orange-300")}>
+                  <Calculator className="h-3 w-3 mr-1" />
+                  Proiettato {getMonthName(month + 1)} (31/{(month + 1).toString().padStart(2, '0')})
+                </Badge>
+              </div>
+            )}
           </div>
         </div>
       </CardHeader>
@@ -194,8 +223,19 @@ export const BankBalancesPanel: React.FC<BankBalancesPanelProps> = ({
 
         <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
-            <div className={cn("text-sm", darkMode ? "text-gray-400" : "text-slate-600")}>
-              💡 Clicca sull'icona di modifica per aggiornare i saldi
+            <div className={cn("text-sm space-y-1", darkMode ? "text-gray-400" : "text-slate-600")}>
+              <div>💡 Clicca sull'icona di modifica per aggiornare i saldi</div>
+              {projectedBalance !== null && (
+                <div className="space-y-1 text-xs">
+                  <div className="flex items-center gap-1">
+                    <Calculator className="h-3 w-3" />
+                    <span>Proiezioni = Ultimo saldo consolidato + Cash Flow mensile</span>
+                  </div>
+                  <div className="text-xs opacity-75">
+                    📅 Saldi proiettati basati su entrate e uscite previste
+                  </div>
+                </div>
+              )}
             </div>
             <Button variant="outline" size="sm">
               <Calculator className="h-3 w-3 mr-2" />
