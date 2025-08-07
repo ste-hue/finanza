@@ -35,6 +35,7 @@ import {
 } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
 import { DataExportImportModal } from '@/components/DataExportImportModal'
+import { BankBalancesPanel } from '@/components/BankBalancesPanel'
 import { MobileBottomNav } from '@/components/MobileBottomNav'
 import { MobileDataCard } from '@/components/MobileDataCard'
 import { MobileChart } from '@/components/MobileChart'
@@ -1628,100 +1629,16 @@ export const CollapsibleFinanceDashboard: React.FC<CollapsibleFinanceDashboardPr
           </div>
           )}
 
-          {/* PANNELLO SALDO DI RIFERIMENTO - FASE 2 */}
-          <div className={cn(
-            "rounded-xl border p-6 mb-6 transition-all duration-300",
-            darkMode ? "bg-gradient-to-r from-blue-900/20 to-purple-900/20 border-blue-700/50" : "bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200"
-          )}>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                  <Banknote className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <h2 className={cn("text-xl font-semibold", darkMode ? "text-gray-100" : "text-slate-800")}>
-                    Saldo di Riferimento
-                  </h2>
-                  <p className={cn("text-sm", darkMode ? "text-gray-400" : "text-slate-600")}>
-                    Saldo bancario al 31 del mese precedente
-                  </p>
-                </div>
-              </div>
-              
-              {/* Company & Year Selector */}
-              <div className="flex items-center gap-3">
-                <div className={cn("text-sm font-medium", darkMode ? "text-gray-300" : "text-slate-700")}>
-                  {selectedCompany}
-                </div>
-                <div className="flex items-center gap-1">
-                  <Button 
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setSelectedYear(selectedYear - 1)}
-                    className={cn(
-                      "h-8 w-12",
-                      darkMode && "border-gray-600 hover:bg-gray-700"
-                    )}
-                  >
-                    {selectedYear - 1}
-                  </Button>
-                  <div className={cn(
-                    "text-lg font-bold px-3 py-1 rounded-md",
-                    darkMode ? "bg-blue-800 text-blue-100" : "bg-blue-100 text-blue-800"
-                  )}>
-                    {selectedYear}
-                  </div>
-                  <Button 
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setSelectedYear(selectedYear + 1)}
-                    className={cn(
-                      "h-8 w-12",
-                      darkMode && "border-gray-600 hover:bg-gray-700"
-                    )}
-                  >
-                    {selectedYear + 1}
-                  </Button>
-                </div>
-              </div>
-            </div>
-            
-            {/* Input Saldo di Riferimento */}
-            <div className="grid md:grid-cols-3 gap-4">
-              <div>
-                <label className={cn("block text-sm font-medium mb-2", darkMode ? "text-gray-300" : "text-slate-700")}>
-                  Saldo al 31/07/2025
-                </label>
-                <Input
-                  type="text"
-                  placeholder="€753,667.83"
-                  className={cn(
-                    "text-lg font-mono",
-                    darkMode ? "bg-gray-800 border-gray-600" : "bg-white"
-                  )}
-                />
-              </div>
-              <div>
-                <label className={cn("block text-sm font-medium mb-2", darkMode ? "text-gray-300" : "text-slate-700")}>
-                  Data Riferimento
-                </label>
-                <Input
-                  type="date"
-                  defaultValue="2025-07-31"
-                  className={cn(
-                    "text-sm",
-                    darkMode ? "bg-gray-800 border-gray-600" : "bg-white"
-                  )}
-                />
-              </div>
-              <div className="flex items-end">
-                <Button className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700">
-                  <Calculator className="h-4 w-4 mr-2" />
-                  Ricalcola Proiezioni
-                </Button>
-              </div>
-            </div>
-          </div>
+          {/* PANNELLO SALDI BANCARI MULTIPLI - FASE 2 */}
+          <BankBalancesPanel 
+            year={selectedYear}
+            month={7} // Mese di riferimento (luglio)
+            darkMode={darkMode}
+            onTotalChange={(total) => {
+              // Callback per aggiornare totali quando cambiano i saldi
+              console.log('Total bank balance changed:', total)
+            }}
+          />
 
           {/* Mobile Summary Cards - Only on mobile */}
           {!zenMode && (
