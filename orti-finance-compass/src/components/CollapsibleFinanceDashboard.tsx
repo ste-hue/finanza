@@ -1502,280 +1502,187 @@ export const CollapsibleFinanceDashboard: React.FC<CollapsibleFinanceDashboardPr
           "mx-auto transition-all duration-300",
           zenMode ? "max-w-full" : "max-w-7xl p-4 md:p-6"
         )}>
-          {/* 📊 HEADER - Responsive & Enhanced */}
+          {/* 📊 HEADER SEMPLIFICATO */}
           {!zenMode && (
           <div ref={headerRef} className={cn(
-            "rounded-lg border p-4 md:p-6 mb-4 md:mb-6 transition-all duration-300",
-            darkMode ? "bg-gray-800 border-gray-700" : "bg-white border-slate-200"
+            "rounded-xl border p-6 mb-6 transition-all duration-300",
+            darkMode ? "bg-gray-800/50 border-gray-700" : "bg-white/80 border-slate-200 backdrop-blur-sm"
           )}>
-            {/* Top Controls Bar */}
-            <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+            {/* Header Pulito */}
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-8 bg-gradient-to-b from-blue-500 to-purple-600 rounded-full"></div>
+                <h1 className={cn(
+                  "text-2xl md:text-3xl font-semibold tracking-tight",
+                  darkMode ? "text-gray-100" : "text-slate-800"
+                )}>
+                  Piano Finanziario {selectedYear}
+                </h1>
+              </div>
+              
+              {/* Controlli Essenziali */}
               <div className="flex items-center gap-2">
-                {/* Mobile Menu Toggle */}
                 <Button
-                  variant="ghost"
-                  size="icon"
-                  className="md:hidden"
-                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setDarkMode(!darkMode)}
+                  className={cn(
+                    "transition-all",
+                    darkMode && "border-gray-600 hover:bg-gray-700"
+                  )}
                 >
-                  {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                  {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
                 </Button>
                 
-                <h1 className={cn(
-                  "text-xl md:text-3xl font-light transition-all",
-                  darkMode ? "text-gray-100" : "text-slate-800",
-                  zenMode && "text-lg md:text-2xl"
-                )}>
-                  Dashboard Finanziaria
-                </h1>
+                <DataExportImportModal
+                  onExport={exportData}
+                  onImport={importData}
+                  exportFilename={`orti-finance-${selectedYear}`}
+                  darkMode={darkMode}
+                />
+              </div>
             </div>
 
-            {/* Control Buttons - Desktop */}
-            <div className="hidden md:flex items-center gap-2">
-              {/* 🎯 View Filter Controls */}
-              <div className="flex items-center gap-1 border rounded-lg p-1">
-                <Button
-                  variant={viewFilter === 'all' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewFilter('all')}
-                  className={cn(
-                    "transition-all px-3 py-1 text-xs",
-                    viewFilter === 'all' 
-                      ? darkMode ? "bg-blue-600 text-white" : "bg-blue-600 text-white"
-                      : darkMode ? "text-gray-300 hover:bg-gray-700" : "text-gray-600 hover:bg-gray-100"
-                  )}
-                >
-                  <Filter className="h-3 w-3 mr-1" />
-                  Tutto
-                </Button>
-                <Button
-                  variant={viewFilter === 'consolidated' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewFilter('consolidated')}
-                  className={cn(
-                    "transition-all px-3 py-1 text-xs",
-                    viewFilter === 'consolidated' 
-                      ? darkMode ? "bg-green-600 text-white" : "bg-green-600 text-white"
-                      : darkMode ? "text-gray-300 hover:bg-gray-700" : "text-gray-600 hover:bg-gray-100"
-                  )}
-                >
-                  <CheckCircle2 className="h-3 w-3 mr-1" />
-                  Consolidato
-                </Button>
-                <Button
-                  variant={viewFilter === 'projections' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewFilter('projections')}
-                  className={cn(
-                    "transition-all px-3 py-1 text-xs",
-                    viewFilter === 'projections' 
-                      ? darkMode ? "bg-orange-600 text-white" : "bg-orange-600 text-white"
-                      : darkMode ? "text-gray-300 hover:bg-gray-700" : "text-gray-600 hover:bg-gray-100"
-                  )}
-                >
-                  <Circle className="h-3 w-3 mr-1" />
-                  Previsionale
-                </Button>
-              </div>
-
+            {/* Filtri Vista - Semplificati */}
+            <div className="flex items-center justify-center gap-1 bg-gray-50 dark:bg-gray-800 rounded-lg p-1">
               <Button
-                variant="outline"
+                variant={viewFilter === 'all' ? 'default' : 'ghost'}
                 size="sm"
-                onClick={() => setShowCharts(!showCharts)}
+                onClick={() => setViewFilter('all')}
                 className={cn(
-                  "transition-all",
-                  darkMode && "border-gray-600 hover:bg-gray-700"
+                  "transition-all px-4 py-2",
+                  viewFilter === 'all' 
+                    ? "bg-white dark:bg-gray-700 shadow-sm" 
+                    : "hover:bg-white/50 dark:hover:bg-gray-700/50"
                 )}
               >
-                <BarChart3 className="h-4 w-4 mr-2" />
-                {showCharts ? 'Nascondi' : 'Mostra'} Grafici
+                Tutto
               </Button>
-              
               <Button
-                variant="outline"
+                variant={viewFilter === 'consolidated' ? 'default' : 'ghost'}
                 size="sm"
-                onClick={() => toggleAllSections(!Object.values(expandedSections).some(v => v))}
+                onClick={() => setViewFilter('consolidated')}
                 className={cn(
-                  "transition-all",
-                  darkMode && "border-gray-600 hover:bg-gray-700"
+                  "transition-all px-4 py-2",
+                  viewFilter === 'consolidated' 
+                    ? "bg-white dark:bg-gray-700 shadow-sm" 
+                    : "hover:bg-white/50 dark:hover:bg-gray-700/50"
                 )}
               >
-                {Object.values(expandedSections).some(v => v) ? 
-                  <Minimize2 className="h-4 w-4 mr-2" /> : 
-                  <Maximize2 className="h-4 w-4 mr-2" />
-                }
-                {Object.values(expandedSections).some(v => v) ? 'Chiudi' : 'Espandi'} Tutto
+                <CheckCircle2 className="h-3 w-3 mr-2 text-green-600" />
+                Consolidato
               </Button>
-              
-              <DataExportImportModal
-                onExport={exportData}
-                onImport={importData}
-                exportFilename={`orti-finance-${selectedYear}`}
-                darkMode={darkMode}
-              />
-              
               <Button
-                variant="outline"
+                variant={viewFilter === 'projections' ? 'default' : 'ghost'}
                 size="sm"
-                onClick={() => setZenMode(!zenMode)}
+                onClick={() => setViewFilter('projections')}
                 className={cn(
-                  "transition-all",
-                  darkMode && "border-gray-600 hover:bg-gray-700"
+                  "transition-all px-4 py-2",
+                  viewFilter === 'projections' 
+                    ? "bg-white dark:bg-gray-700 shadow-sm" 
+                    : "hover:bg-white/50 dark:hover:bg-gray-700/50"
                 )}
               >
-                {zenMode ? <Eye className="h-4 w-4 mr-2" /> : <EyeOff className="h-4 w-4 mr-2" />}
-                Zen Mode
-              </Button>
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setDarkMode(!darkMode)}
-                className={cn(
-                  "transition-all",
-                  darkMode && "border-gray-600 hover:bg-gray-700"
-                )}
-              >
-                {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                <Circle className="h-3 w-3 mr-2 text-orange-600" />
+                Previsionale
               </Button>
             </div>
           </div>
 
-          {/* Mobile Menu */}
-          {mobileMenuOpen && (
-            <div className="md:hidden border-t pt-4 mt-4 space-y-2">
-              {/* 🎯 Mobile View Filter Controls */}
-              <div className="space-y-1">
-                <p className="text-xs text-gray-500 px-2">Filtro Vista:</p>
-                <div className="flex gap-1">
-                  <Button
-                    variant={viewFilter === 'all' ? 'default' : 'outline'}
+
+
+          {/* PANNELLO SALDO DI RIFERIMENTO - FASE 2 */}
+          <div className={cn(
+            "rounded-xl border p-6 mb-6 transition-all duration-300",
+            darkMode ? "bg-gradient-to-r from-blue-900/20 to-purple-900/20 border-blue-700/50" : "bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200"
+          )}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                  <Banknote className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h2 className={cn("text-xl font-semibold", darkMode ? "text-gray-100" : "text-slate-800")}>
+                    Saldo di Riferimento
+                  </h2>
+                  <p className={cn("text-sm", darkMode ? "text-gray-400" : "text-slate-600")}>
+                    Saldo bancario al 31 del mese precedente
+                  </p>
+                </div>
+              </div>
+              
+              {/* Company & Year Selector */}
+              <div className="flex items-center gap-3">
+                <div className={cn("text-sm font-medium", darkMode ? "text-gray-300" : "text-slate-700")}>
+                  {selectedCompany}
+                </div>
+                <div className="flex items-center gap-1">
+                  <Button 
+                    variant="outline"
                     size="sm"
-                    onClick={() => setViewFilter('all')}
-                    className="flex-1 text-xs"
+                    onClick={() => setSelectedYear(selectedYear - 1)}
+                    className={cn(
+                      "h-8 w-12",
+                      darkMode && "border-gray-600 hover:bg-gray-700"
+                    )}
                   >
-                    <Filter className="h-3 w-3 mr-1" />
-                    Tutto
+                    {selectedYear - 1}
                   </Button>
-                  <Button
-                    variant={viewFilter === 'consolidated' ? 'default' : 'outline'}
+                  <div className={cn(
+                    "text-lg font-bold px-3 py-1 rounded-md",
+                    darkMode ? "bg-blue-800 text-blue-100" : "bg-blue-100 text-blue-800"
+                  )}>
+                    {selectedYear}
+                  </div>
+                  <Button 
+                    variant="outline"
                     size="sm"
-                    onClick={() => setViewFilter('consolidated')}
-                    className="flex-1 text-xs"
+                    onClick={() => setSelectedYear(selectedYear + 1)}
+                    className={cn(
+                      "h-8 w-12",
+                      darkMode && "border-gray-600 hover:bg-gray-700"
+                    )}
                   >
-                    <CheckCircle2 className="h-3 w-3 mr-1" />
-                    Consolidato
-                  </Button>
-                  <Button
-                    variant={viewFilter === 'projections' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setViewFilter('projections')}
-                    className="flex-1 text-xs"
-                  >
-                    <Circle className="h-3 w-3 mr-1" />
-                    Previsionale
+                    {selectedYear + 1}
                   </Button>
                 </div>
               </div>
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowCharts(!showCharts)}
-                className="w-full justify-start"
-              >
-                <BarChart3 className="h-4 w-4 mr-2" />
-                {showCharts ? 'Nascondi' : 'Mostra'} Grafici
-              </Button>
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => toggleAllSections(!Object.values(expandedSections).some(v => v))}
-                className="w-full justify-start"
-              >
-                {Object.values(expandedSections).some(v => v) ? 
-                  <Minimize2 className="h-4 w-4 mr-2" /> : 
-                  <Maximize2 className="h-4 w-4 mr-2" />
-                }
-                {Object.values(expandedSections).some(v => v) ? 'Chiudi' : 'Espandi'} Tutto
-              </Button>
-              
-              <DataExportImportModal
-                onExport={exportData}
-                onImport={importData}
-                exportFilename={`orti-finance-${selectedYear}`}
-                darkMode={darkMode}
-                trigger={
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full justify-start"
-                  >
-                    <FileJson className="h-4 w-4 mr-2" />
-                    Import/Export
-                  </Button>
-                }
-              />
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setZenMode(!zenMode)}
-                className="w-full justify-start"
-              >
-                {zenMode ? <Eye className="h-4 w-4 mr-2" /> : <EyeOff className="h-4 w-4 mr-2" />}
-                Zen Mode
-              </Button>
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setDarkMode(!darkMode)}
-                className="w-full justify-start"
-              >
-                {darkMode ? <Sun className="h-4 w-4 mr-2" /> : <Moon className="h-4 w-4 mr-2" />}
-                {darkMode ? 'Light Mode' : 'Dark Mode'}
-              </Button>
-            </div>
-          )}
-
-          {/* Company & Year Info */}
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <div className={cn("text-base md:text-lg", darkMode ? "text-gray-300" : "text-slate-600")}>
-              {selectedCompany} {selectedYear}
             </div>
             
-            {/* Year Selector - Responsive */}
-            <div className="flex items-center gap-2 w-full md:w-auto">
-              <Button 
-                variant="outline"
-                size="sm"
-                onClick={() => setSelectedYear(selectedYear - 1)}
-                className={cn(
-                  "flex-1 md:flex-initial",
-                  darkMode && "border-gray-600 hover:bg-gray-700"
-                )}
-              >
-                {selectedYear - 1}
-              </Button>
-              <div className={cn(
-                "text-lg md:text-xl font-semibold px-4 py-2 rounded flex-1 md:flex-initial text-center",
-                darkMode ? "bg-blue-900 text-blue-100" : "bg-blue-50"
-              )}>
-                {selectedYear}
+            {/* Input Saldo di Riferimento */}
+            <div className="grid md:grid-cols-3 gap-4">
+              <div>
+                <label className={cn("block text-sm font-medium mb-2", darkMode ? "text-gray-300" : "text-slate-700")}>
+                  Saldo al 31/07/2025
+                </label>
+                <Input
+                  type="text"
+                  placeholder="€753,667.83"
+                  className={cn(
+                    "text-lg font-mono",
+                    darkMode ? "bg-gray-800 border-gray-600" : "bg-white"
+                  )}
+                />
               </div>
-              <Button 
-                variant="outline"
-                size="sm"
-                onClick={() => setSelectedYear(selectedYear + 1)}
-                className={cn(
-                  "flex-1 md:flex-initial",
-                  darkMode && "border-gray-600 hover:bg-gray-700"
-                )}
-              >
-                {selectedYear + 1}
-              </Button>
+              <div>
+                <label className={cn("block text-sm font-medium mb-2", darkMode ? "text-gray-300" : "text-slate-700")}>
+                  Data Riferimento
+                </label>
+                <Input
+                  type="date"
+                  defaultValue="2025-07-31"
+                  className={cn(
+                    "text-sm",
+                    darkMode ? "bg-gray-800 border-gray-600" : "bg-white"
+                  )}
+                />
+              </div>
+              <div className="flex items-end">
+                <Button className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700">
+                  <Calculator className="h-4 w-4 mr-2" />
+                  Ricalcola Proiezioni
+                </Button>
+              </div>
             </div>
           </div>
 
